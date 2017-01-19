@@ -1,0 +1,8 @@
+name: Fivestar
+description: Enables fivestar ratings on content, users, etc.
+type: module
+package: Voting
+core: 8.x
+dependencies:
+  - votingapi
+configure: fivestar.admin_overview
