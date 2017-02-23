@@ -35,6 +35,10 @@ class SelectWidget extends FiveStartWidgetBase {
       ]);
     }
 
+    $element += [
+      '#type' => 'item',
+    ];
+
     $element['rating'] = array(
       '#type' => 'select',
       '#empty_option' => $this->t('Select rating:'),

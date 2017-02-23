@@ -81,6 +81,10 @@ class StarsWidget extends FiveStartWidgetBase {
         'style' => 'user',
       ];
 
+    $element += [
+      '#type' => 'item',
+    ];
+
     $element['rating'] = array(
       '#type' => 'fivestar',
       '#stars' => $settings['stars'],
