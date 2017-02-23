@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\fivestar\Element\Fivestar.
- */
-
 namespace Drupal\fivestar\Element;
 
 use Drupal\Core\Form\FormStateInterface;

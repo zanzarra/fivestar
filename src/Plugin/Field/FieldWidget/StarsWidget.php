@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\fivestar\Plugin\Field\FieldWidget\StarsWidget.
- */
-
 namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 
 use Drupal\Component\Utility\Html;

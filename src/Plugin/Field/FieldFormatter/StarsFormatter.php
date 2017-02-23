@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\fivestar\Plugin\Field\FieldFormatter\StarsFormatter.
- */
-
 namespace Drupal\fivestar\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;

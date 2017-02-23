@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\fivestar\Plugin\Field\FieldType\FivestarItem.
- */
-
 namespace Drupal\fivestar\Plugin\Field\FieldType;
 
 use Drupal\Component\Utility\Html;

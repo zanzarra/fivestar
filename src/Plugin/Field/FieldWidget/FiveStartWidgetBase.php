@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\fivestar\Plugin\Field\FieldWidget\FiveStartWidgetBase
- */
-
 namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\WidgetBase;
