@@ -96,7 +96,7 @@
  * Create a degradeable star rating interface out of a simple form structure.
  */
 (function($) {
-  Drupal.ajax.prototype.commands.fivestarUpdate = function(ajax, response, status) {
+  Drupal.AjaxCommands.prototype.fivestarUpdate = function(ajax, response, status) {
     response.selector = $('.fivestar-form-item', ajax.element.form);
     ajax.commands.insert(ajax, response, status);
   };
