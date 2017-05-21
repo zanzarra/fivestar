@@ -25,7 +25,7 @@ class StarsFormatter extends FiveStarFormatterBase {
    */
   public static function defaultSettings() {
     return [
-      'fivestar_widget' => 'modules/fivestar/widgets/basic/basic.css',
+      'fivestar_widget' => drupal_get_path('module', 'fivestar') . '/widgets/basic/basic.css',
     ] + parent::defaultSettings();
   }
 
