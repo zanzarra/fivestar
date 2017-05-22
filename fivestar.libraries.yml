@@ -10,6 +10,7 @@ fivestar.base:
     - core/jquery
     - core/drupal
     - core/jquery.once
+    - core/drupal.ajax
 
 fivestar.admin:
   version: VERSION
