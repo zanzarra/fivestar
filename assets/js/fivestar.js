@@ -21,7 +21,7 @@
         $select = $('select', $this);
         $cancel = $('option[value="0"]', $this);
         if ($cancel.length) {
-          $('<div class="cancel"><a href="#0" title="' + $cancel.text()(+'">' + $cancel.text() + '</a></div>')).appendTo($container);
+          $('<div class="cancel"><a href="#0" title="' + $cancel.text() + '">' + $cancel.text() + '</a></div>').appendTo($container);
         }
         $options = $('option', $this).not('[value="-"], [value="0"]');
         index = -1;
