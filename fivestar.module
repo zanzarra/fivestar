@@ -498,7 +498,8 @@ function fivestar_form_submit($form, &$form_state) {
  */
 function fivestar_ajax_submit($form, $form_state) {
   if (!empty($form_state['settings']['content_id'])) {
-    $entity = entity_load($form_state['settings']['entity_type'], array($form_state['settings']['entity_id']));
+    $entity_manager = \Drupal::entityTypeManager();
+    $entity = $entity_manager->getStorage($form_state['settings']['entity_type'])->load(array($form_state['settings']['entity_id']));
     $entity = reset($entity);
     _fivestar_update_field_value($form_state['settings']['content_type'], $entity, $form_state['settings']['field_name'], $form_state['settings']['langcode'], $form_state['values']['vote']);
     $votes = _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['tag']);

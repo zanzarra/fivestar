@@ -64,7 +64,8 @@ class Fivestar extends FormElement {
     $title = 'it';
     if (isset($element['#settings']['entity_id']) && isset($element['#settings']['entity_type'])) {
       $entity_id = $element['#settings']['entity_id'];
-      $entity = entity_load($element['#settings']['entity_type'], array($entity_id));
+      $entity_manager = \Drupal::entityTypeManager();
+      $entity = $entity_manager->getStorage($element['#settings']['entity_type'])->load(array($entity_id));
       $entity = $entity[$entity_id];
       $title = $entity->title;
     } elseif (isset($complete_form['#node'])) {
