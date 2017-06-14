@@ -19,7 +19,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
 function fivestar_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
       case 'help.page.fivestar':
-      $output .= '<h3>' . t('About') . '</h3>';
+      $output = '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('The Fivestar voting module is a very simple rating module that provides the possibility to rate items with stars or similar items. This gives you the possibilities to rate various items or even to create online forms for evaluations and assessments with different questions to be answered. For more information, see the <a href=":online">online documentation for the Fivestar module</a>.', [':online' => 'https://www.drupal.org/documentation/modules/fivestar']) . '</p>';
       $output .= '<h3>' . t('Uses') . '</h3>';
       $output .= '<dl>';
