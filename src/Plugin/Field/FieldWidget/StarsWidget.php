@@ -2,7 +2,6 @@
 
 namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
@@ -20,6 +19,7 @@ use Drupal\Component\Utility\Unicode;
  * )
  */
 class StarsWidget extends FiveStartWidgetBase {
+
   /**
    * {@inheritdoc}
    */
@@ -45,6 +45,9 @@ class StarsWidget extends FiveStartWidgetBase {
     return $elements;
   }
 
+  /**
+   *
+   */
   public function previewsExpand(array $element) {
     foreach (Element::children($element) as $css) {
       $vars = [
@@ -64,19 +67,19 @@ class StarsWidget extends FiveStartWidgetBase {
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $widgets = $this->getAllWidget();
     $active = $this->getSetting('fivestar_widget');
-    $widget = array(
+    $widget = [
       'name' => isset($widgets[$active]) ? Unicode::strtolower($widgets[$active]) : 'default',
       'css' => $active,
-    );
+    ];
 
-    $values = array(
+    $values = [
       'user' => 0,
       'average' => 0,
       'count' => 0,
-    );
+    ];
 
     $settings = $items[$delta]->getFieldDefinition()
-        ->getSettings() + [
+      ->getSettings() + [
         'text' => 'none',
         'style' => 'user',
       ];
@@ -85,7 +88,7 @@ class StarsWidget extends FiveStartWidgetBase {
       '#type' => 'item',
     ];
 
-    $element['rating'] = array(
+    $element['rating'] = [
       '#type' => 'fivestar',
       '#stars' => $settings['stars'],
       '#allow_clear' => $settings['allow_clear'],
@@ -95,7 +98,7 @@ class StarsWidget extends FiveStartWidgetBase {
       '#widget' => $widget,
       '#settings' => $settings,
       '#values' => $values,
-    );
+    ];
     return $element;
   }
 

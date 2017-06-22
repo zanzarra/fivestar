@@ -1,25 +1,36 @@
 <?php
+
 /**
  * @file
  * Based test file for the Fivestar module.
  */
 
+/**
+ *
+ */
 class FivestarBaseTestCase extends AJAXTestCase {
   // Using testing profile.
-  // @see http://groups.drupal.org/node/217189
+  /**
+   * @see http://groups.drupal.org/node/217189
+   */
   protected $profile = 'testing';
 
-  // Set up our basic users.
+  /**
+   * Set up our basic users.
+   */
   protected $admin_user;
   protected $voter;
-  
-  public function setUp() {
-    parent::setUp(array('fivestar', 'dblog'));
 
-    $type = $this->drupalCreateContentType(array('type' => 'test_node_type', 'name' => 'test_node_type'));
-    $this->admin_user = $this->drupalCreateUser(array('create test_node_type content', 'rate content'));
-    $this->voter_user = $this->drupalCreateUser(array('rate content'));
- }
+  /**
+   *
+   */
+  public function setUp() {
+    parent::setUp(['fivestar', 'dblog']);
+
+    $type = $this->drupalCreateContentType(['type' => 'test_node_type', 'name' => 'test_node_type']);
+    $this->admin_user = $this->drupalCreateUser(['create test_node_type content', 'rate content']);
+    $this->voter_user = $this->drupalCreateUser(['rate content']);
+  }
 
   /**
    * Add a fivestar field to a content type.
@@ -27,41 +38,42 @@ class FivestarBaseTestCase extends AJAXTestCase {
    * @param $options
    *   An associative array of options for the field and instance.
    */
-  public function createFivestarField($options = array()) {
-    $options = $options + array(
+  public function createFivestarField($options = []) {
+    $options = $options + [
       'content_type' => 'test_node_type',
       'widget_type' => 'stars',
-      'display' => array(),
-    );
-    $field = array(
+      'display' => [],
+    ];
+    $field = [
       'field_name' => 'fivestar_test',
       'type' => 'fivestar',
       'cardinality' => 1,
-      'settings' => array(
+      'settings' => [
         'axis' => 'vote',
-      ),
-    );
-    $instance = array(
+      ],
+    ];
+    $instance = [
       'entity_type' => 'node',
       'field_name' => 'fivestar_test',
       'label' => 'Fivestar test field',
       'bundle' => $options['content_type'],
-      'widget' => array(
+      'widget' => [
         'type' => $options['widget_type'],
-        'settings' => array(
-          'widget' => array(
+        'settings' => [
+          'widget' => [
             'fivestar_widget' => 'default',
-          ),
-        ),
-      ),
-      'settings' => array(
+          ],
+        ],
+      ],
+      'settings' => [
         'axis' => 'vote',
         'stars' => '5',
-      ),
+      ],
       'display' => $options['display'],
-    );
+    ];
 
     field_create_field($field);
     field_create_instance($instance);
   }
+
 }

@@ -29,6 +29,9 @@ class StarsFormatter extends FiveStarFormatterBase {
     ] + parent::defaultSettings();
   }
 
+  /**
+   *
+   */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = [];
     $widgets = $this->getAllWidget();
@@ -41,11 +44,11 @@ class StarsFormatter extends FiveStarFormatterBase {
         'css' => $active,
       ];
       $settings = $item->getFieldDefinition()->getSettings();
-      $values = array(
+      $values = [
         'user' => 0,
         'average' => 0,
         'count' => 0,
-      );
+      ];
 
       $elements[$delta] = [
         '#theme' => 'fivestar_output_widget',

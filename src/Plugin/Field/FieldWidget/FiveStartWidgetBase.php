@@ -5,7 +5,8 @@ namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 use Drupal\Core\Field\WidgetBase;
 
 /**
- * Class FiveStartWidgetBase
+ * Class FiveStartWidgetBase.
+ *
  * @package Drupal\fivestar\Plugin\Field\FieldWidget
  */
 abstract class FiveStartWidgetBase extends WidgetBase {

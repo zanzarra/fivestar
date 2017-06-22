@@ -1,6 +1,7 @@
 <?php
 
 namespace Drupal\fivestar\Plugin\Field\FieldFormatter;
+
 use Drupal\Core\Field\FieldItemListInterface;
 
 /**
@@ -16,10 +17,13 @@ use Drupal\Core\Field\FieldItemListInterface;
  * )
  */
 class PercentageFormatter extends FiveStarFormatterBase {
+
+  /**
+   *
+   */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     // TODO: Implement viewElements() method.
     return [];
   }
-
 
 }

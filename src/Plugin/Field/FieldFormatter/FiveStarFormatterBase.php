@@ -5,7 +5,9 @@ namespace Drupal\fivestar\Plugin\Field\FieldFormatter;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Render\Element;
 
-
+/**
+ *
+ */
 abstract class FiveStarFormatterBase extends FormatterBase {
 
   /**

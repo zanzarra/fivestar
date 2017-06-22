@@ -22,40 +22,40 @@ class Fivestar extends FormElement {
    */
   public function getInfo() {
     $class = get_class($this);
-    return array(
+    return [
       '#input' => TRUE,
       '#stars' => 5,
       '#allow_clear' => FALSE,
       '#allow_revote' => FALSE,
       '#allow_ownvote' => FALSE,
       '#auto_submit' => FALSE,
-      '#process' => array(array($class, 'process')),
-      '#theme_wrappers' => array('form_element'),
-      '#widget' => array(
+      '#process' => [[$class, 'process']],
+      '#theme_wrappers' => ['form_element'],
+      '#widget' => [
         'name' => 'default',
         'css' => 'default',
-      ),
-      '#values' => array(
+      ],
+      '#values' => [
         'user' => 0,
         'average' => 0,
         'count' => 0,
-      ),
-      '#settings' => array(
+      ],
+      '#settings' => [
         'style' => 'user',
         'text' => 'none',
-      ),
-    );
+      ],
+    ];
   }
 
   /**
-   *  Process callback for fivestar element
+   * Process callback for fivestar element.
    */
   public static function process(&$element, FormStateInterface $form_state, &$complete_form) {
-    if (!self::isVoteAllowed($element)){
+    if (!self::isVoteAllowed($element)) {
       $element['#input'] = FALSE;
     }
 
-    // Add CSS and JS
+    // Add CSS and JS.
     $element['#attached']['library'][] = 'fivestar/fivestar.base';
     $settings = $element['#settings'];
     $values = $element['#values'];
@@ -65,23 +65,24 @@ class Fivestar extends FormElement {
     if (isset($element['#settings']['entity_id']) && isset($element['#settings']['entity_type'])) {
       $entity_id = $element['#settings']['entity_id'];
       $entity_manager = \Drupal::entityTypeManager();
-      $entity = $entity_manager->getStorage($element['#settings']['entity_type'])->load(array($entity_id));
+      $entity = $entity_manager->getStorage($element['#settings']['entity_type'])->load([$entity_id]);
       $entity = $entity[$entity_id];
       $title = $entity->title;
-    } elseif (isset($complete_form['#node'])) {
+    }
+    elseif (isset($complete_form['#node'])) {
       $title = $complete_form['#node']->title;
     }
-    $options = array('-' => t('Select rating'));
+    $options = ['-' => t('Select rating')];
     for ($i = 1; $i <= $element['#stars']; $i++) {
-      $this_value = ceil($i * 100/$element['#stars']);
-      $options[$this_value] = t('Give @title @star/@count', array('@title' => $title, '@star' => $i, '@count' => $element['#stars']));
+      $this_value = ceil($i * 100 / $element['#stars']);
+      $options[$this_value] = t('Give @title @star/@count', ['@title' => $title, '@star' => $i, '@count' => $element['#stars']]);
     }
     // Display clear button only if enabled.
     if ($element['#allow_clear'] == TRUE) {
       $options[0] = t('Cancel rating');
     }
 
-    $element['vote'] = array(
+    $element['vote'] = [
       '#type' => 'select',
       '#options' => $options,
       '#required' => $element['#required'],
@@ -89,7 +90,7 @@ class Fivestar extends FormElement {
       '#theme' => self::isVoteAllowed($element) ? 'select' /*'fivestar_select'*/ : 'fivestar_static',
       '#default_value' => self::getElementDefaultValue($element),
       '#weight' => -2,
-    );
+    ];
 
     if (isset($element['#parents'])) {
       $element['vote']['#parents'] = $element['#parents'];
@@ -97,49 +98,53 @@ class Fivestar extends FormElement {
 
     switch ($settings['text']) {
       case 'user':
-        $description = array(
+        $description = [
           '#type' => 'fivestar_summary',
           '#user_rating' => $values['user'],
           '#votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
           '#stars' => $settings['stars'],
           '#microdata' => $settings['microdata'],
-        );
+        ];
         $element['vote']['#description'] = $description;
         $class[] = 'fivestar-user-text';
         break;
+
       case 'average':
-        $description = array(
+        $description = [
           '#type' => 'fivestar_summary',
           '#average_rating' => $values['average'],
           '#votes' => $values['count'],
           '#stars' => $settings['stars'],
           '#microdata' => $settings['microdata'],
-        );
+        ];
         $element['vote']['#description'] = $settings['style'] == 'dual' ? NULL : $description;
         $class[] = 'fivestar-average-text';
         break;
+
       case 'smart':
-        $element['vote']['#description'] = ($settings['style'] == 'dual' && !$values['user']) ? NULL : theme('fivestar_summary', array(
+        $element['vote']['#description'] = ($settings['style'] == 'dual' && !$values['user']) ? NULL : theme('fivestar_summary', [
           'user_rating' => $values['user'],
           'average_rating' => $values['user'] ? NULL : $values['average'],
           'votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
           'stars' => $settings['stars'],
           'microdata' => $settings['microdata'],
-        ));
+        ]);
         $class[] = 'fivestar-smart-text';
         $class[] = $values['user'] ? 'fivestar-user-text' : 'fivestar-average-text';
         break;
+
       case 'dual':
-        $element['vote']['#description'] = array(
+        $element['vote']['#description'] = [
           '#type' => 'fivestar_summary',
           '#user_rating' => $values['user'],
           '#average_rating' => $settings['style'] == 'dual' ? NULL : $values['average'],
           '#votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
           '#stars' => $settings['stars'],
           '#microdata' => $settings['microdata'],
-        );
+        ];
         $class[] = ' fivestar-combo-text';
         break;
+
       case 'none':
         $element['vote']['#description'] = NULL;
         break;
@@ -149,43 +154,46 @@ class Fivestar extends FormElement {
       case 'average':
         $class[] = 'fivestar-average-stars';
         break;
+
       case 'user':
         $class[] = 'fivestar-user-stars';
         break;
+
       case 'smart':
         $class[] = 'fivestar-smart-stars ' . ($values['user'] ? 'fivestar-user-stars' : 'fivestar-average-stars');
         break;
+
       case 'dual':
         $class[] = 'fivestar-combo-stars';
-        $static_average = array(
+        $static_average = [
           '#type' => 'fivestar_static',
           '#rating' => $values['average'],
           '#stars' => $settings['stars'],
           '#tag' => $settings['tag'],
           '#widget' => $settings['widget'],
-        );
+        ];
         if ($settings['text'] != 'none') {
-          $static_description = array(
+          $static_description = [
             '#type' => 'fivestar_summary',
             '#average_rating' => $settings['text'] == 'user' ? NULL : (isset($values['average']) ? $values['average'] : 0),
             '#votes' => isset($values['count']) ? $values['count'] : 0,
             '#stars' => $settings['stars'],
-          );
+          ];
         }
         else {
           $static_description = '&nbsp;';
         }
-        $element_static = array(
+        $element_static = [
           '#type' => 'fivestar_static_element',
           '#star_display' => $static_average,
           '#title' => '',
           '#description' => $static_description,
-        );
-        $element['average'] = array(
+        ];
+        $element['average'] = [
           '#type' => 'markup',
           '#markup' => $element_static,
           '#weight' => -1,
-        );
+        ];
         break;
     }
     $class[] = 'fivestar-form-item';
@@ -193,44 +201,43 @@ class Fivestar extends FormElement {
     if ($element['#widget']['name'] != 'default') {
       $element['#attached']['library'][] = "fivestar/fivestar.{$element['#widget']['name']}";
     }
-    $element['#prefix'] = '<div ' . new Attribute(array('class' => $class)) . '>';
+    $element['#prefix'] = '<div ' . new Attribute(['class' => $class]) . '>';
     $element['#suffix'] = '</div>';
 
     // Add AJAX handling if necessary.
     if (!empty($element['#auto_submit'])) {
-      $element['vote']['#ajax'] = array(
+      $element['vote']['#ajax'] = [
         'callback' => 'fivestar_ajax_submit',
-      );
+      ];
       $element['vote']['#attached']['library'][] = "fivestar/fivestar.ajax";
     }
 
     if (empty($element['#input'])) {
-      $static_stars = array(
+      $static_stars = [
         '#type' => 'fivestar_static',
         '#rating' => $element['vote']['#default_value'],
         '#stars' => $settings['stars'],
         '#tag' => $settings['tag'],
         '#widget' => $settings['widget'],
-      );
+      ];
 
-      $element_static = array(
+      $element_static = [
         '#type' => 'fivestar_static_element',
         '#star_display' => $static_stars,
         '#title' => '',
         '#description' => $element['vote']['#description'],
-      );
-      $element['vote'] = array(
+      ];
+      $element['vote'] = [
         '#type' => 'markup',
         '#markup' => $element_static,
-      );
+      ];
     }
 
     // Add validation function that considers a 0 value as empty.
-    $element['#element_validate'] = array('fivestar_validate');
+    $element['#element_validate'] = ['fivestar_validate'];
 
     return $element;
   }
-
 
   /**
    * Determines if a user can vote on content.
@@ -254,7 +261,6 @@ class Fivestar extends FormElement {
         ->condition('user_id', isset($element['#settings']['content_id']) ? $element['#settings']['content_id'] : NULL)
         ->execute();
       // $votes = Drupal::entityManager()->getStorage('vote')->loadMultiple($vote_ids);
-
       $can_revote = !$vote_ids;
     }
     if (!$can_revote) {
@@ -269,13 +275,12 @@ class Fivestar extends FormElement {
       return TRUE;
     }
     $entity_id = $element['#settings']['entity_id'];
-    $entity = entity_load($element['#settings']['entity_type'], array($entity_id));
+    $entity = entity_load($element['#settings']['entity_type'], [$entity_id]);
     $entity = $entity[$entity_id];
     $uid1 = $entity->uid;
     $uid2 = $user->uid;
     return $entity->uid != $user->uid;
   }
-
 
   /**
    * Provides the correct default value for a fivestar element.
@@ -295,23 +300,27 @@ class Fivestar extends FormElement {
         case 'average':
           $default_value = $element['#values']['average'];
           break;
+
         case 'user':
           $default_value = $element['#values']['user'];
           break;
+
         case 'smart':
           $default_value = (!empty($element['#values']['user']) ? $element['#values']['user'] : $element['#values']['average']);
           break;
+
         case 'dual':
           $default_value = $element['#values']['user'];
           break;
+
         default:
           $default_value = $element['#values']['average'];
       }
     }
 
     for ($i = 0; $i <= $element['#stars']; $i++) {
-      $this_value = ceil($i * 100/$element['#stars']);
-      $next_value = ceil(($i+1) * 100/$element['#stars']);
+      $this_value = ceil($i * 100 / $element['#stars']);
+      $next_value = ceil(($i + 1) * 100 / $element['#stars']);
 
       // Round up the default value to the next exact star value if needed.
       if ($this_value < $default_value && $next_value > $default_value) {

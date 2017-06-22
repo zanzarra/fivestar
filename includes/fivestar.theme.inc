@@ -2,59 +2,62 @@
 
 /**
  * @file
- * Provides the theming functions for fivestar
+ * Provides the theming functions for fivestar.
  */
 
+use Drupal\Core\Render\Element\RenderElement;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Form\FormState;
 /**
  * Show a preview of a widget using a custom CSS file.
  */
 function theme_fivestar_preview_widget($variables) {
-  $form = array(
-    '#post' => array(),
+  $form = [
+    '#post' => [],
     '#programmed' => FALSE,
     '#tree' => FALSE,
-    '#parents' => array(),
-    '#array_parents' => array(),
+    '#parents' => [],
+    '#array_parents' => [],
     '#required' => FALSE,
-    '#attributes' => array(),
+    '#attributes' => [],
     '#title_display' => 'before',
-  );
+  ];
   $complete_form = [];
-  $form_state = new \Drupal\Core\Form\FormState();
+  $form_state = new FormState();
   $buidler = \Drupal::formBuilder();
   $form_state->setValues([]);
   $form_state->setProcessInput(FALSE);
   $form_state->setCompleteForm($complete_form);
-  $form['vote'] = array(
+  $form['vote'] = [
     '#type' => 'fivestar',
     '#stars' => 5,
     '#auto_submit' => FALSE,
     '#allow_clear' => TRUE,
     '#allow_revote' => TRUE,
     '#allow_ownvote' => TRUE,
-    '#widget' => array(
+    '#widget' => [
       'name' => isset($variables['name']) ? $variables['name'] : 'default',
       'css' => isset($variables['css']) && $variables['css'] != 'default' ? $variables['css'] : FALSE,
-    ),
-  );
+    ],
+  ];
 
-  // Attach necessary JS settings
-  $settings = array(
+  // Attach necessary JS settings.
+  $settings = [
     'titleUser' => t('Your rating') . ': ',
     'titleAverage' => t('Average') . ': ',
     'feedbackSavingVote' => t('Saving your vote...'),
     'feedbackVoteSaved' => t('Your vote has been saved.'),
     'feedbackDeletingVote' => t('Deleting your vote...'),
     'feedbackVoteDeleted' => t('Your vote has been deleted.'),
-  );
-  $form['#attached'][] = array(
-    'js' => array(
-      array(
+  ];
+  $form['#attached'][] = [
+    'js' => [
+      [
         'type' => 'setting',
-        'data' => $settings
-      )
-    )
-  );
+        'data' => $settings,
+      ],
+    ],
+  ];
 
   $buidler->doBuildForm('fivestar_preview', $form, $form_state);
   $output = $form;
@@ -64,14 +67,17 @@ function theme_fivestar_preview_widget($variables) {
   return \Drupal::service('renderer')->render($output);
 }
 
+/**
+ *
+ */
 function theme_fivestar_preview($variables) {
   extract($variables, EXTR_SKIP);
-  $values = array(
+  $values = [
     'average' => 50,
     'user' => 80,
     'count' => 20,
-  );
-  $settings = array(
+  ];
+  $settings = [
     'stars' => $stars,
     'allow_clear' => $unvote,
     'allow_revote' => $revote,
@@ -81,21 +87,24 @@ function theme_fivestar_preview($variables) {
     'title' => $title,
     'autosubmit' => FALSE,
     'tag' => 'vote',
-  );
+  ];
 
   $form = drupal_get_form('fivestar_custom_widget', $values, $settings);
   $form = drupal_render($form);
   // This regex is sadly necessary because having duplicate form_tokens or
   // form_id elements can cause the content type form to choke. Forms inside of
   // forms is also frowned upon, so this removes the wrapping form tag as well.
-  $form = str_replace(array('<form', '</form>'), array(
+  $form = str_replace(['<form', '</form>'], [
     '<div',
-    '</div>'
-  ), $form);
+    '</div>',
+  ], $form);
   $form = preg_replace('/( method=".*?")|( action=".*?")|(<input.*?name="(form_token|form_id|destination|form_build_id)".*?\/>)/', '', $form);
   return $form;
 }
 
+/**
+ *
+ */
 function theme_fivestar_preview_wrapper($variables) {
   return '<div class="fivestar-preview fivestar-preview-' . $variables['type'] . '">' . $variables['content'] . '</div>';
 }
@@ -114,22 +123,22 @@ function theme_fivestar_formatter_default($variables) {
     $element['#instance_settings']['stars'] = 5;
   }
 
-  // Add CSS and JS
+  // Add CSS and JS.
   $path = drupal_get_path('module', 'fivestar');
   drupal_add_js($path . '/js/fivestar.js');
   drupal_add_css($path . '/css/fivestar.css');
 
-  $variables = array(
+  $variables = [
     'rating' => $element['#rating'],
     'stars' => $element['#instance_settings']['stars'],
     'widget' => $element['#widget'],
-  );
+  ];
   $star_display = theme('fivestar_static', $variables);
-  return theme('fivestar_static_element', array(
+  return theme('fivestar_static_element', [
     'description' => $element['#description'],
     'star_display' => $star_display,
-    'is_form' => FALSE
-  ));
+    'is_form' => FALSE,
+  ]);
 }
 
 /**
@@ -170,7 +179,7 @@ function theme_fivestar_formatter_percentage($variables) {
 function theme_fivestar($variables) {
   $element = $variables['element'];
 
-  return theme('form_element', array('element' => $element));
+  return theme('form_element', ['element' => $element]);
 }
 
 /**
@@ -181,8 +190,8 @@ function theme_fivestar_select($variables) {
   $element = $variables['element'];
   unset($element['#theme']);
   return \Drupal::service('renderer')->render($element);
-  \Drupal\Core\Render\Element::setAttributes($element, ['id', 'name', 'size']);
-  \Drupal\Core\Render\Element\RenderElement::setAttributes($element, array('form-select'));
+  Element::setAttributes($element, ['id', 'name', 'size']);
+  RenderElement::setAttributes($element, ['form-select']);
   $variables['#attributes'] = $element['#attributes'];
   $variables['#options'] = form_select_options($element);
   $variables['#theme'] = 'select';
@@ -197,6 +206,7 @@ function theme_fivestar_select($variables) {
  *   The total number of stars this rating is out of.
  * @param $tag
  *   Allows multiple ratings per node.
+ *
  * @return
  *   A themed HTML string representing the star widget.
  */
@@ -261,6 +271,7 @@ function theme_fivestar_static($variables) {
  *   The total number of votes.
  * @param $stars
  *   The number of stars being displayed.
+ *
  * @return
  *   A themed HTML string representing the star widget.
  */
@@ -274,7 +285,7 @@ function theme_fivestar_summary($variables) {
   if (isset($user_rating)) {
     $div_class = isset($votes) ? 'user-count' : 'user';
     $user_stars = round(($user_rating * $stars) / 100, 1);
-    $output .= '<span class="user-rating">' . t('Your rating: <span>!stars</span>', array('!stars' => $user_rating ? $user_stars : t('None'))) . '</span>';
+    $output .= '<span class="user-rating">' . t('Your rating: <span>!stars</span>', ['!stars' => $user_rating ? $user_stars : t('None')]) . '</span>';
   }
   if (isset($user_rating) && isset($average_rating)) {
     $output .= ' ';
@@ -292,7 +303,7 @@ function theme_fivestar_summary($variables) {
       $average_rating_microdata = drupal_attributes($microdata['average_rating']['#attributes']);
     }
     $output .= '<span class="average-rating">' . t('Average: !stars',
-        array('!stars' => "<span $average_rating_microdata>$average_stars</span>")) . '</span>';
+        ['!stars' => "<span $average_rating_microdata>$average_stars</span>"]) . '</span>';
   }
 
   if (isset($votes)) {
@@ -308,9 +319,9 @@ function theme_fivestar_summary($variables) {
       }
       // We don't directly substitute $votes (i.e. use '@count') in format_plural,
       // because it has a span around it which is not translatable.
-      $votes_str = format_plural($votes, '!cnt vote', '!cnt votes', array(
-        '!cnt' => '<span ' . $rating_count_microdata . '>' . intval($votes) . '</span>'
-      ));
+      $votes_str = format_plural($votes, '!cnt vote', '!cnt votes', [
+        '!cnt' => '<span ' . $rating_count_microdata . '>' . intval($votes) . '</span>',
+      ]);
       if (isset($user_rating) || isset($average_rating)) {
         $output .= ' <span class="total-votes">(' . $votes_str . ')</span>';
       }
@@ -319,7 +330,6 @@ function theme_fivestar_summary($variables) {
       }
     }
   }
-
 
   $output = '<div class="fivestar-summary fivestar-summary-' . $div_class . '">' . $output . '</div>';
   return $output;
@@ -336,35 +346,34 @@ function theme_fivestar_static_element($variables) {
   else {
     $output .= '<div class="fivestar-static-form-item">';
   }
-  $element = array(
+  $element = [
     '#type' => 'item',
     '#title' => $variables['title'],
     '#description' => $variables['description'],
     '#children' => $variables['star_display'],
-  );
+  ];
 
-  $output .= theme('form_element', array('element' => $element));
+  $output .= theme('form_element', ['element' => $element]);
   $output .= '</div>';
   return $output;
 }
-
 
 /**
  * Show a preview of a widget using a custom CSS file.
  */
 function theme_fivestar_output_widget($variables) {
-  $form = array(
-    '#post' => array(),
+  $form = [
+    '#post' => [],
     '#programmed' => FALSE,
     '#tree' => FALSE,
-    '#parents' => array(),
-    '#array_parents' => array(),
+    '#parents' => [],
+    '#array_parents' => [],
     '#required' => FALSE,
-    '#attributes' => array(),
+    '#attributes' => [],
     '#title_display' => 'before',
-  );
+  ];
   $complete_form = [];
-  $form_state = new \Drupal\Core\Form\FormState();
+  $form_state = new FormState();
   $buidler = \Drupal::formBuilder();
   $form_state->setValues([]);
   $form_state->setProcessInput(FALSE);

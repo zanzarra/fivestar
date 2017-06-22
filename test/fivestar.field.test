@@ -1,17 +1,24 @@
 <?php
+
 /**
  * @file
  * Simpletests for the Fivestar module.
  */
 
+/**
+ *
+ */
 class FivestarTestCase extends FivestarBaseTestCase {
 
+  /**
+   *
+   */
   public static function getInfo() {
-    return array(
+    return [
       'name' => 'Fivestar widgets',
       'description' => 'Make sure fivestar widgets can be created and used.',
       'group' => 'Fivestar',
-    );
+    ];
   }
 
   /**
@@ -20,16 +27,17 @@ class FivestarTestCase extends FivestarBaseTestCase {
   public function testAuthorRating() {
     $this->drupalLogin($this->admin_user);
     // Add an author-rated fivestar field to the test_node_type content type.
-    $this->createFivestarField(array('widget_type' => 'stars'));
+    $this->createFivestarField(['widget_type' => 'stars']);
     // Load the instance settings so we can set allow_ownvote.
     $instance = field_read_instance('node', 'fivestar_test', 'test_node_type');
     $instance['settings']['allow_ownvote'] = 1;
     field_update_instance($instance);
     // Save an test_node_typee node with a two-star rating.
-    $edit = array(
+    $edit = [
       'title' => $this->randomString(),
-      'fivestar_test[und][0][rating]' => '40' // Equals a rating of 2 stars.
-    );
+    // Equals a rating of 2 stars.
+      'fivestar_test[und][0][rating]' => '40',
+    ];
     $this->drupalPost('node/add/test_node_type', $edit, t('Save'));
     // Make sure the two-star rating shows on the node view.
     $result = $this->xpath("//div[contains(@class, 'field-name-fivestar-test')]//div[contains(@class,'star-first')]/span");
@@ -40,16 +48,16 @@ class FivestarTestCase extends FivestarBaseTestCase {
    * Test that users can rate content with exposed widgets.
    */
   public function testViewerRating() {
-    $this->createFivestarField(array('widget_type' => 'exposed'));
+    $this->createFivestarField(['widget_type' => 'exposed']);
     // Add an test_node_type to rate.
-    $node = $this->drupalCreateNode(array('type' => 'test_node_type'));
+    $node = $this->drupalCreateNode(['type' => 'test_node_type']);
     $this->drupalGet('node/' . $node->nid);
     $this->drupalLogin($this->voter_user);
 
     // Rate the test_node_type.
-    $edit = array(
+    $edit = [
       'vote' => '60',
-    );
+    ];
     $this->drupalPost('node/' . $node->nid, $edit, t('Rate'));
     $this->assertNoRaw(t('No votes yet'), 'Visitors can rate content using the exposed widget.');
 
@@ -89,21 +97,21 @@ class FivestarTestCase extends FivestarBaseTestCase {
    */
   public function testViewerNonRating() {
     // Add an exposed field, with the Exposed display settings set to FALSE.
-    $this->createFivestarField(array(
+    $this->createFivestarField([
       'widget_type' => 'exposed',
-      'display' => array(
-        'default' => array(
+      'display' => [
+        'default' => [
           'type' => 'fivestar_formatter_default',
-          'settings' => array(
+          'settings' => [
             'style' => 'average',
             'text' => 'average',
             'expose' => FALSE,
-          ),
-        ),
-      ),
-    ));
+          ],
+        ],
+      ],
+    ]);
     // Add an test_node_type to test static widget.
-    $node = $this->drupalCreateNode(array('type' => 'test_node_type'));
+    $node = $this->drupalCreateNode(['type' => 'test_node_type']);
     // Rate the test_node_type.
     $this->drupalLogin($this->voter_user);
     $this->drupalGet('node/' . $node->nid);
@@ -116,20 +124,20 @@ class FivestarTestCase extends FivestarBaseTestCase {
    */
   public function testViewerRatingAjax() {
     // Add a viewer-rated fivestar field to the test_node_type content type.
-    $this->createFivestarField(array('widget_type' => 'exposed'));
+    $this->createFivestarField(['widget_type' => 'exposed']);
     // Add an test_node_type to rate.
-    $node = $this->drupalCreateNode(array('type' => 'test_node_type'));
+    $node = $this->drupalCreateNode(['type' => 'test_node_type']);
     // Rate the test_node_type.
     $this->drupalLogin($this->voter_user);
-    $edit = array(
+    $edit = [
       'vote' => '60',
-    );
+    ];
     $commands = $this->drupalPostAJAX('node/' . $node->nid, $edit, "vote",
-      NULL, array(), array(), "fivestar-custom-widget");
-    $expected = array(
+      NULL, [], [], "fivestar-custom-widget");
+    $expected = [
       'command' => 'fivestarUpdate',
       // TODO: we should text the data being returned.
-    );
+    ];
     $this->assertCommand($commands, $expected, "The fivestarUpdate AJAX command was returned.");
   }
 
@@ -140,22 +148,22 @@ class FivestarTestCase extends FivestarBaseTestCase {
   public function testExposedWidgetDisplay() {
     // Lets add an exposed widget but display the static widget.
     // It's simpler to compare the display type using the static widget.
-    $this->createFivestarField(array(
+    $this->createFivestarField([
       'widget_type' => 'exposed',
-      'display' => array(
-        'default' => array(
+      'display' => [
+        'default' => [
           'type' => 'fivestar_formatter_default',
-          'settings' => array(
+          'settings' => [
             'style' => 'average',
             'text' => 'average',
             'expose' => FALSE,
-          ),
-        ),
-      ),
-    ));
+          ],
+        ],
+      ],
+    ]);
     $instance = field_read_instance('node', 'fivestar_test', 'test_node_type');
     // Add an test_node_type to test widget against.
-    $node = $this->drupalCreateNode(array('type' => 'test_node_type'));
+    $node = $this->drupalCreateNode(['type' => 'test_node_type']);
 
     // Test the Default Widget.
     $this->drupalGet('node/' . $node->nid);
@@ -168,7 +176,8 @@ class FivestarTestCase extends FivestarBaseTestCase {
       $widget_class = 'fivestar-' . drupal_strtolower($name);
       $this->drupalGet('node/' . $node->nid);
       $result = $this->xpath("//div[contains(@class, '" . $widget_class . "')]//div[contains(@class,'star-first')]/span");
-      $this->assertEqual($result[0][0], '0', t('The @name fivestar widget is properly display.', array('@name' => $name)));
+      $this->assertEqual($result[0][0], '0', t('The @name fivestar widget is properly display.', ['@name' => $name]));
     }
   }
+
 }

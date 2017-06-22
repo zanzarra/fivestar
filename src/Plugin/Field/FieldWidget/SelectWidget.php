@@ -2,8 +2,6 @@
 
 namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -32,7 +30,7 @@ class SelectWidget extends FiveStartWidgetBase {
       $this_value = ceil($i * 100 / $settings['stars']);
       $options[$this_value] = $this->t('Give @star/@count', [
         '@star' => $i,
-        '@count' => $settings['stars']
+        '@count' => $settings['stars'],
       ]);
     }
 
@@ -40,14 +38,14 @@ class SelectWidget extends FiveStartWidgetBase {
       '#type' => 'item',
     ];
 
-    $element['rating'] = array(
+    $element['rating'] = [
       '#type' => 'select',
       '#empty_option' => $this->t('Select rating:'),
       '#empty_value' => '-',
       '#options' => $options,
       '#required' => $items[$delta]->getFieldDefinition()->isRequired(),
       '#default_value' => isset($items[$delta]->rating) ? $items[$delta]->rating : 0,
-    );
+    ];
 
     return $element;
   }

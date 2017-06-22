@@ -5,7 +5,6 @@
  * Provides API documentation for the fivestar module.
  */
 
-
 /**
  * Implementation of hook_fivestar_widgets().
  *
@@ -21,10 +20,10 @@
  */
 function hook_fivestar_widgets() {
   // Letting fivestar know about my Cool and Awesome Stars.
-  $widgets = array(
+  $widgets = [
     'path/to/my/awesome/fivestar/css.css' => 'Awesome Stars',
     'path/to/my/cool/fivestar/css.css' => 'Cool Stars',
-  );
+  ];
 
   return $widgets;
 }
@@ -84,15 +83,15 @@ function hook_fivestar_target_info($field, $instance) {
   $entity_type = $instance['entity_type'];
   $bundle = $instance['bundle'];
 
-  $options = array(
+  $options = [
     // Declase a new Target Type.
     // This will allow users to vote on a Node and have the vote cast against the
     // node's author instead of the actual node.
-    'example_node_author' => array(
+    'example_node_author' => [
       'title' => t('Node Author'),
-      'callback' => '_example_target_node_author'
-    ),
-  );
+      'callback' => '_example_target_node_author',
+    ],
+  ];
 
   return $options;
 }
@@ -123,10 +122,10 @@ function hook_fivestar_target_info($field, $instance) {
  * @see hook_fivestar_target_info()
  */
 function _example_target_node_author($entity, $field, $instance, $langcode) {
-  $target = array(
+  $target = [
     'entity_id' => 2,
     'entity_type' => 'user',
-  );
+  ];
 
   return $target;
 }

@@ -2,7 +2,6 @@
 
 namespace Drupal\fivestar\Plugin\Field\FieldType;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\Language;
@@ -32,21 +31,21 @@ class FivestarItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function schema(FieldStorageDefinitionInterface $field_definition) {
-    return array(
-      'columns' => array(
-        'rating' => array(
+    return [
+      'columns' => [
+        'rating' => [
           'type' => 'int',
           'unsigned' => TRUE,
           'not null' => FALSE,
-          'sortable' => TRUE
-        ),
-        'target' => array(
+          'sortable' => TRUE,
+        ],
+        'target' => [
           'type' => 'int',
           'unsigned' => TRUE,
-          'not null' => FALSE
-        ),
-      ),
-    );
+          'not null' => FALSE,
+        ],
+      ],
+    ];
   }
 
   /**
@@ -63,20 +62,23 @@ class FivestarItem extends FieldItemBase {
    * @return array
    */
   public static function defaultFieldSettings() {
-    return array(
+    return [
       'stars' => 5,
       'allow_clear' => FALSE,
       'allow_revote' => TRUE,
       'allow_ownvote' => TRUE,
       'rated_while' => 'viewing',
       'target' => '',
-    ) + parent::defaultFieldSettings();
+    ] + parent::defaultFieldSettings();
   }
 
+  /**
+   *
+   */
   public static function defaultStorageSettings() {
-    return array(
+    return [
       'voting_tag' => 'vote',
-    ) + parent::defaultStorageSettings();
+    ] + parent::defaultStorageSettings();
   }
 
   /**
@@ -84,7 +86,7 @@ class FivestarItem extends FieldItemBase {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $element = [];
-    $element['voting_tag'] = array(
+    $element['voting_tag'] = [
       '#type' => 'select',
       '#required' => TRUE,
       '#title' => 'Voting Tag',
@@ -92,7 +94,7 @@ class FivestarItem extends FieldItemBase {
       '#description' => $this->t('The tag this rating will affect. Enter a property on which that this rating will affect, such as <em>quality</em>, <em>satisfaction</em>, <em>overall</em>, etc.'),
       '#default_value' => $this->getSetting('voting_tag'),
       '#disabled' => $has_data,
-    );
+    ];
 
     return $element;
   }
@@ -101,35 +103,35 @@ class FivestarItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
-    $element = array();
+    $element = [];
 
-    $element['stars'] = array(
+    $element['stars'] = [
       '#type' => 'select',
       '#title' => $this->t('Number of stars'),
       '#options' => array_combine(range(1, 10), range(1, 10)),
       '#default_value' => $this->getSetting('stars'),
-    );
+    ];
 
-    $element['allow_clear'] = array(
+    $element['allow_clear'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to cancel their ratings.'),
       '#default_value' => $this->getSetting('allow_clear'),
       '#return_value' => 1,
-    );
+    ];
 
-    $element['allow_revote'] = array(
+    $element['allow_revote'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to re-vote on already voted content.'),
       '#default_value' => $this->getSetting('allow_revote'),
       '#return_value' => 1,
-    );
+    ];
 
-    $element['allow_ownvote'] = array(
+    $element['allow_ownvote'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to vote on their own content.'),
       '#default_value' => $this->getSetting('allow_ownvote'),
       '#return_value' => 1,
-    );
+    ];
 
     $element['rated_while'] = [
       '#type' => 'radios',
@@ -141,20 +143,19 @@ class FivestarItem extends FieldItemBase {
       ],
     ];
 
-
     // FIXME: Vijay
-    // $options = $this->fivestar_get_targets($field, $instance);
-    $options = array();
-    $element['target'] = array(
+    // $options = $this->fivestar_get_targets($field, $instance);.
+    $options = [];
+    $element['target'] = [
       '#title' => $this->t('Voting target'),
       '#type' => 'select',
       // FIXME: Vijay
-      // '#default_value' => (isset($settings['target']) && $instance['widget']['type'] != 'exposed') ? $settings['target'] : 'none',
+      // '#default_value' => (isset($settings['target']) && $instance['widget']['type'] != 'exposed') ? $settings['target'] : 'none',.
       '#options' => $options,
       '#description' => $this->t('The voting target will make the value of this field cast a vote on another node. Use node reference fields module to create advanced reviews. Use the Parent Node Target when using fivestar with comments. More information available on the <a href="http://drupal.org/handbook/modules/fivestar">Fivestar handbook page</a>.'),
       // FIXME: Vijay
-      // '#access' => (count($options) > 1 && $instance['widget']['type'] != 'exposed'),
-    );
+      // '#access' => (count($options) > 1 && $instance['widget']['type'] != 'exposed'),.
+    ];
 
     return $element;
   }
@@ -174,16 +175,18 @@ class FivestarItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function postSave($update) {
-//    $this->fieldOperations();
+    // $this->fieldOperations();
   }
 
+  /**
+   *
+   */
   protected function fieldOperations($op = NULL) {
     $entity = $this->getEntity();
     $entity_type = $entity->getEntityType();
     $langcode = $this->getLangcode();
     // FIXME: Vijay
-    // return;
-
+    // return;.
     foreach ($items as $delta => $item) {
       if ((isset($entity->status) && !$entity->status) || $op == 'delete') {
         $rating = 0;
@@ -192,7 +195,7 @@ class FivestarItem extends FieldItemBase {
         $rating = (isset($items[$delta]['rating'])) ? $items[$delta]['rating'] : 0;
       }
       // FIXME: Vijay
-      // $target = $this->_fivestar_field_target($entity, $field, $instance, $langcode);
+      // $target = $this->_fivestar_field_target($entity, $field, $instance, $langcode);.
       if (!empty($target)) {
         if ($entity_type == 'comment' && $op == 'delete') {
           $target['vote_source'] = $entity->hostname;
@@ -202,7 +205,7 @@ class FivestarItem extends FieldItemBase {
         }
         // FIXME: Vijay
         // _fivestar_cast_vote($target['entity_type'], $target['entity_id'], $rating, $field['settings']['axis'], $entity->uid, TRUE, $target['vote_source']);
-        // votingapi_recalculate_results($target['entity_type'], $target['entity_id']);
+        // votingapi_recalculate_results($target['entity_type'], $target['entity_id']);.
       }
       // The original callback is only called for a single updated field, but the Field API
       // then updates all fields of the entity. For an update, the Field API first deletes
@@ -223,13 +226,13 @@ class FivestarItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function delete() {
-//    $this->fieldOperations('delete');
+    // $this->fieldOperations('delete');.
   }
 
   /**
    * Helper function to find the id that should be rated when a field is changed.
    */
-  function _fivestar_field_target($entity, $field, $instance, $langcode) {
+  public function _fivestar_field_target($entity, $field, $instance, $langcode) {
     if ($instance['widget']['type'] == 'exposed') {
       return NULL;
     }
@@ -237,19 +240,21 @@ class FivestarItem extends FieldItemBase {
       $target = $this->fivestar_get_targets($field, $instance, $instance['settings']['target'], $entity, $langcode);
     }
     else {
-      $target = array(
+      $target = [
         'entity_id' => $entity->id(),
         'entity_type' => $instance['entity_type'],
-      );
+      ];
     }
     return $target;
   }
 
-
-  function fivestar_get_targets($field, $instance, $key = FALSE, $entity = FALSE, $langcode = Language::LANGCODE_NOT_SPECIFIED) {
-    $options = array();
+  /**
+   *
+   */
+  public function fivestar_get_targets($field, $instance, $key = FALSE, $entity = FALSE, $langcode = Language::LANGCODE_NOT_SPECIFIED) {
+    $options = [];
     $targets = \Drupal::moduleHandler()
-      ->invokeAll('fivestar_target_info', array($field, $instance));
+      ->invokeAll('fivestar_target_info', [$field, $instance]);
     if ($key == FALSE) {
       foreach ($targets as $target => $info) {
         $options[$target] = $info['title'];
