@@ -223,7 +223,7 @@ class FivestarItem extends FieldItemBase {
    */
   public function isEmpty() {
     $rating = $this->get('rating')->getValue();
-    return $rating === NULL || $rating === '';
+    return empty($rating) || $rating == '-';
   }
 
   /**
