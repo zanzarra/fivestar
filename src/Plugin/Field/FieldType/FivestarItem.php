@@ -100,7 +100,7 @@ class FivestarItem extends FieldItemBase {
         ]
       ),
       '#default_value' => $this->getSetting('vote_type'),
-      '#disabled' => $has_data,
+      '#show_static_result' => $has_data,
     ];
 
     return $element;
@@ -170,7 +170,7 @@ class FivestarItem extends FieldItemBase {
     $element['target_fivestar_field'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Target fivestar field'),
-      '#description' => $this->t('Machine name of fivestar field which shuld affect after vote.'),
+      '#description' => $this->t('Machine name of fivestar field which should affect after vote.'),
       '#states' => $states,
       '#default_value' => $this->getSetting('target_fivestar_field'),
     ];
@@ -257,9 +257,9 @@ class FivestarItem extends FieldItemBase {
       $vote->delete();
     }
 
-    $vote_manager->addVote($entity, $vote_rating);
+    $vote_manager->addVote($entity, $vote_rating, $field_settings['vote_type']);
     if (!empty($target_entity)) {
-      $vote_manager->addVote($target_entity, $vote_rating);
+      $vote_manager->addVote($target_entity, $vote_rating, $field_settings['vote_type']);
     }
   }
 
@@ -306,8 +306,6 @@ class FivestarItem extends FieldItemBase {
 
     foreach ($votes as $vote) {
       // Get target vote.
-
-      // @TODO vote criteria
       $target_votes = $vote_storage->loadByProperties([
         'entity_type' => $target_entity->getEntityTypeId(),
         'entity_id' => $target_entity->id(),

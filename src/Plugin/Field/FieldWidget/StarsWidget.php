@@ -74,8 +74,8 @@ class StarsWidget extends FiveStartWidgetBase {
       'css' => $active,
     ] + $this->getSettings();
     $settings = $items[$delta]->getFieldDefinition()->getSettings();
+    $display_settings += $settings;
     $is_field_config_form = ($form_state->getBuildInfo()['form_id'] == 'field_config_edit_form');
-    // @todo need to leave comment.
     $voting_is_allowed = (bool) ($settings['rated_while'] == 'editing') || $is_field_config_form;
 
     $element['rating'] = [
@@ -87,7 +87,7 @@ class StarsWidget extends FiveStartWidgetBase {
       '#default_value' => isset($items[$delta]->rating) ? $items[$delta]->rating : 0,
       '#widget' => $display_settings,
       '#settings' => $display_settings,
-      '#disabled' => !$voting_is_allowed,
+      '#show_static_result' => !$voting_is_allowed,
     ];
 
     return $element;

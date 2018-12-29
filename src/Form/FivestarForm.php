@@ -50,7 +50,7 @@ class FivestarForm extends FormBase {
       '#default_value' => $entity->get($field_name)->rating,
       '#values' => $result_manager->getResultsByVoteType($entity, $field_settings['vote_type']),
       '#settings' => $context['display_settings'],
-      '#disabled' => !$voting_is_allowed,
+      '#show_static_result' => !$voting_is_allowed,
       '#attributes' => [
         'class' => ['vote'],
       ],

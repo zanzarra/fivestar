@@ -5,10 +5,9 @@
  * Provides the theming functions for fivestar.
  */
 
-use Drupal\Core\Render\Element\RenderElement;
-use Drupal\Core\Template\Attribute;
 use Drupal\Core\Render\Element;
-use Drupal\Core\Form\FormState;
+use Drupal\Core\Template\Attribute;
+use Drupal\Core\Render\Element\RenderElement;
 
 /**
  * Show a preview of a widget using a custom CSS file.
