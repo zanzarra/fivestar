@@ -14,6 +14,12 @@
 (function($) {
   Drupal.behaviors.fivestar = {
     attach: function(context) {
+      $('.vote').on('change', function() {
+        if (!$(this).prop('disabled')) {
+          $(this).closest('form').find('.form-submit').trigger('click');
+        }
+      });
+
       $(context).find('div.fivestar-form-item').once('fivestar').each(function() {
         var $cancel, $container, $options, $select, $this, index;
         $this = $(this);
@@ -49,14 +55,14 @@
       var $this, $this_star, $widget, value;
       $this = $(this);
       $widget = event.data;
-      value = this.hash.replace('#', '');
+      value = parseInt(this.hash.replace('#', ''));
       $('select', $widget).val(value).change();
       if (value === 0) {
         $this_star = $this.parent().parent().find('.star');
       } else {
         $this_star = $this.closest('.star');
       }
-      $this_star.prevAll('.star').andSelf().addClass('on');
+      $this_star.prevAll('.star').addBack().addClass('on');
       $this_star.nextAll('.star').removeClass('on');
       if (value === 0) {
         $this_star.removeClass('on');

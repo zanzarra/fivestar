@@ -6,49 +6,50 @@
  */
 
 use Drupal\Core\Render\Element;
-/**
- * Implementation of hook_field_info().
- */
-function fivestar_field_info() {
-  return [
-    'fivestar' => [
-      'label' => t('Fivestar Rating'),
-      'description' => t('Store a rating for this piece of content.'),
-      'default_widget' => 'exposed',
-      'default_formatter' => 'fivestar_formatter_default',
-      'settings' => [
-        'axis' => 'vote',
-      ],
-      'instance_settings' => [
-        'stars' => 5,
-      ],
-      'property_type' => 'fivestar',
-      'property_callbacks' => ['fivestar_property_info_callback'],
-      'microdata' => TRUE,
-    ],
-  ];
-}
+///**
+// * Implementation of hook_field_info().
+// */
+//function fivestar_field_info() {
+//  return [
+//    'fivestar' => [
+//      'label' => t('Fivestar Rating'),
+//      'description' => t('Store a rating for this piece of content.'),
+//      'default_widget' => 'exposed',
+//      'default_formatter' => 'fivestar_formatter_default',
+//      'settings' => [
+//        'axis' => 'vote',
+//      ],
+//      'instance_settings' => [
+//        'stars' => 5,
+//      ],
+//      'property_type' => 'fivestar',
+//      'property_callbacks' => ['fivestar_property_info_callback'],
+//      'microdata' => TRUE,
+//    ],
+//  ];
+//}
 
-/**
- * Implementation of hook_field_insert().
- */
-function fivestar_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items);
-}
-
-/**
- * Implementation of hook_field_update().
- */
-function fivestar_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items);
-}
-
-/**
- * Implementation of hook_field_delete().
- */
-function fivestar_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items, 'delete');
-}
+///**
+// * Implementation of hook_field_insert().
+// */
+//function fivestar_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+//  $ff = 12345;
+//  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items);
+//}
+//
+///**
+// * Implementation of hook_field_update().
+// */
+//function fivestar_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+//  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items);
+//}
+//
+///**
+// * Implementation of hook_field_delete().
+// */
+//function fivestar_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
+//  _fivestar_field_helper($entity_type, $entity, $field, $instance, $langcode, $items, 'delete');
+//}
 
 /**
  *
@@ -212,9 +213,9 @@ function fivestar_field_widget_form(&$form, &$form_state, $field, $instance, $la
     ];
 
     $values = [
-      'user' => 0,
-      'average' => 0,
-      'count' => 0,
+      'vote_user' => 0,
+      'vote_average' => 0,
+      'vote_count' => 0,
     ];
 
     $settings = [
@@ -415,9 +416,9 @@ function fivestar_field_formatter_view($entity_type, $entity, $field, $instance,
   if ($is_form) {
     // TODO. Get rid of voting categories setting, then change this so
     // axis = field name.
-    $tag = (isset($field['settings']['axis'])) ? $field['settings']['axis'] : 'vote';
+    $vote_type = (isset($field['settings']['axis'])) ? $field['settings']['axis'] : 'vote';
     list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
-    $settings = _fivestar_custom_widget_settings($entity_type, $instance, $display, $id, $tag, $widget);
+    $settings = _fivestar_custom_widget_settings($entity_type, $instance, $display, $id, $vote_type, $widget);
     // Store entity and field data for later reuse.
     $settings += [
       'entity_id' => $id,
@@ -459,12 +460,12 @@ function fivestar_field_formatter_view($entity_type, $entity, $field, $instance,
   // - Only show the user his/her own vote.
   // - Show both the average and the user's own votes.
   $style = $display['settings']['style'];
-  $show_average_stars = ($style == 'average' || $style == 'dual' || ($style == 'smart' && empty($values['user'])));
-  $show_user_stars = ($style == 'user' || $style == 'dual' || ($style == 'smart' && !empty($values['user'])));
+  $show_average_stars = ($style == 'average' || $style == 'dual' || ($style == 'smart' && empty($values['vote_user'])));
+  $show_user_stars = ($style == 'user' || $style == 'dual' || ($style == 'smart' && !empty($values['vote_user'])));
   if ($show_user_stars) {
     $element[0]['user'] = [
       '#theme' => $display['type'],
-      '#rating' => $values['user'],
+      '#rating' => $values['vote_user'],
       '#instance_settings' => $instance['settings'],
       '#display_settings' => $settings,
       '#widget' => $widget,
@@ -474,7 +475,7 @@ function fivestar_field_formatter_view($entity_type, $entity, $field, $instance,
   if ($show_average_stars) {
     $element[0]['average'] = [
       '#theme' => $display['type'],
-      '#rating' => $values['average'],
+      '#rating' => $values['vote_average'],
       '#instance_settings' => $instance['settings'],
       '#display_settings' => $settings,
       '#widget' => $widget,
@@ -501,26 +502,26 @@ function fivestar_field_formatter_view($entity_type, $entity, $field, $instance,
   // both the 'user' and 'average' elements.
   if ($style === 'dual') {
     $element[0]['user']['#description'] = theme('fivestar_summary', [
-      'user_rating' => $values['user'],
+      'user_rating' => $values['vote_user'],
     ] + $summary_options);
     $element[0]['average']['#description'] = theme('fivestar_summary', [
-      'average_rating' => $values['average'],
-      'votes' => $values['count'],
+      'average_rating' => $values['vote_average'],
+      'votes' => $values['vote_count'],
     ] + $summary_options);
   }
   // If we're only creating one element (either 'user' or 'average'), prepare
   // the correct description, and place it on that element.
   else {
     // Prepare the description.
-    $show_average_text = ($text === 'average' || $text === 'dual' || ($text === 'smart' && empty($values['user'])));
-    $show_user_text = ($text === 'user' || $text === 'dual' || ($text === 'smart' && !empty($values['user'])));
+    $show_average_text = ($text === 'average' || $text === 'dual' || ($text === 'smart' && empty($values['vote_user'])));
+    $show_user_text = ($text === 'user' || $text === 'dual' || ($text === 'smart' && !empty($values['vote_user'])));
     if ($show_user_text) {
-      $summary_options['user_rating'] = $values['user'];
+      $summary_options['user_rating'] = $values['vote_user'];
       $element[0]['#attributes']['class'][] = 'fivestar-user-text';
     }
     if ($show_average_text) {
-      $summary_options['average_rating'] = $values['average'];
-      $summary_options['votes'] = $values['count'];
+      $summary_options['average_rating'] = $values['vote_average'];
+      $summary_options['votes'] = $values['vote_count'];
       $element[0]['#attributes']['class'][] = 'fivestar-average-text';
     }
     if ($text === 'smart') {
@@ -547,7 +548,7 @@ function fivestar_field_formatter_view($entity_type, $entity, $field, $instance,
  * @return settings
  *   Array. @see fivestar_custom_widget().
  */
-function _fivestar_custom_widget_settings($entity_type, $instance, $display, $id, $tag, $widget) {
+function _fivestar_custom_widget_settings($entity_type, $instance, $display, $id, $vote_type, $widget) {
   $settings = $display['settings'];
   $settings = [
     'stars' => (!empty($instance['settings']['stars'])) ? $instance['settings']['stars'] : 5,
@@ -558,7 +559,7 @@ function _fivestar_custom_widget_settings($entity_type, $instance, $display, $id
     'text' => $settings['text'],
     'content_type' => $entity_type,
     'content_id' => $id,
-    'tag' => $tag,
+    'vote_type' => $vote_type,
     'autosubmit' => TRUE,
     'title' => FALSE,
     'labels_enable' => FALSE,
@@ -634,14 +635,14 @@ function fivestar_field_prepare_view($entity_type, $entities, $field, $instances
         // If the widget type is not exposed, then the count is always 1 or 0.
         // The count is pointless to display.
         if (!empty($items[$id][0]['rating'])) {
-          $values['count'] = 1;
-          $values['user'] = $items[$id][0]['rating'];
-          $values['average'] = $items[$id][0]['rating'];
+          $values['vote_count'] = 1;
+          $values['vote_user'] = $items[$id][0]['rating'];
+          $values['vote_average'] = $items[$id][0]['rating'];
         }
         else {
-          $values['count'] = 0;
-          $values['user'] = 0;
-          $values['average'] = 0;
+          $values['vote_count'] = 0;
+          $values['vote_user'] = 0;
+          $values['vote_average'] = 0;
         }
         $items[$id] = [$values];
       }
@@ -651,9 +652,9 @@ function fivestar_field_prepare_view($entity_type, $entities, $field, $instances
       foreach ($votes[$entity_type] as $id => $vote) {
         // Populating the $items[$id] array even for items with no value forces
         // the render system to output a widget.
-        $values['user'] = isset($vote['user']['value']) ? $vote['user']['value'] : 0;
-        $values['average'] = isset($vote['average']['value']) ? $vote['average']['value'] : 0;
-        $values['count'] = isset($vote['count']['value']) ? $vote['count']['value'] : 0;
+        $values['vote_user'] = isset($vote['user']['value']) ? $vote['user']['value'] : 0;
+        $values['vote_average'] = isset($vote['average']['value']) ? $vote['average']['value'] : 0;
+        $values['vote_count'] = isset($vote['count']['value']) ? $vote['count']['value'] : 0;
         $items[$id] = [$values];
       }
     }

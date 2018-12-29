@@ -6,65 +6,66 @@
  */
 
 use Drupal\Core\Render\Element\RenderElement;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Form\FormState;
+
 /**
  * Show a preview of a widget using a custom CSS file.
  */
 function theme_fivestar_preview_widget($variables) {
-  $form = [
-    '#post' => [],
-    '#programmed' => FALSE,
-    '#tree' => FALSE,
-    '#parents' => [],
-    '#array_parents' => [],
-    '#required' => FALSE,
-    '#attributes' => [],
-    '#title_display' => 'before',
-  ];
-  $complete_form = [];
-  $form_state = new FormState();
-  $buidler = \Drupal::formBuilder();
-  $form_state->setValues([]);
-  $form_state->setProcessInput(FALSE);
-  $form_state->setCompleteForm($complete_form);
-  $form['vote'] = [
-    '#type' => 'fivestar',
-    '#stars' => 5,
-    '#auto_submit' => FALSE,
-    '#allow_clear' => TRUE,
-    '#allow_revote' => TRUE,
-    '#allow_ownvote' => TRUE,
-    '#widget' => [
-      'name' => isset($variables['name']) ? $variables['name'] : 'default',
-      'css' => isset($variables['css']) && $variables['css'] != 'default' ? $variables['css'] : FALSE,
-    ],
-  ];
-
-  // Attach necessary JS settings.
-  $settings = [
-    'titleUser' => t('Your rating') . ': ',
-    'titleAverage' => t('Average') . ': ',
-    'feedbackSavingVote' => t('Saving your vote...'),
-    'feedbackVoteSaved' => t('Your vote has been saved.'),
-    'feedbackDeletingVote' => t('Deleting your vote...'),
-    'feedbackVoteDeleted' => t('Your vote has been deleted.'),
-  ];
-  $form['#attached'][] = [
-    'js' => [
-      [
-        'type' => 'setting',
-        'data' => $settings,
-      ],
-    ],
-  ];
-
-  $buidler->doBuildForm('fivestar_preview', $form, $form_state);
-  $output = $form;
-  $output['#prefix'] = '<div class="fivestar-star-preview fivestar-' . $form['vote']['#widget']['name'] . '">';
-  $output['#suffix'] = '</div>';
-
-  return \Drupal::service('renderer')->render($output);
+//  $form = [
+//    '#post' => [],
+//    '#programmed' => FALSE,
+//    '#tree' => FALSE,
+//    '#parents' => [],
+//    '#array_parents' => [],
+//    '#required' => FALSE,
+//    '#attributes' => [],
+//    '#title_display' => 'before',
+//  ];
+//  $complete_form = [];
+//  $form_state = new FormState();
+//  $buidler = \Drupal::formBuilder();
+//  $form_state->setValues([]);
+//  $form_state->setProcessInput(FALSE);
+//  $form_state->setCompleteForm($complete_form);
+//  $form['vote'] = [
+//    '#type' => 'fivestar',
+//    '#stars' => 5,
+//    '#allow_clear' => TRUE,
+//    '#allow_revote' => TRUE,
+//    '#allow_ownvote' => TRUE,
+//    '#widget' => [
+//      'name' => isset($variables['name']) ? $variables['name'] : 'default',
+//      'css' => isset($variables['css']) && $variables['css'] != 'default' ? $variables['css'] : FALSE,
+//    ],
+//  ];
+//
+//  // Attach necessary JS settings.
+//  $settings = [
+//    'titleUser' => t('Your rating') . ': ',
+//    'titleAverage' => t('Average') . ': ',
+//    'feedbackSavingVote' => t('Saving your vote...'),
+//    'feedbackVoteSaved' => t('Your vote has been saved.'),
+//    'feedbackDeletingVote' => t('Deleting your vote...'),
+//    'feedbackVoteDeleted' => t('Your vote has been deleted.'),
+//  ];
+//  $form['#attached'][] = [
+//    'js' => [
+//      [
+//        'type' => 'setting',
+//        'data' => $settings,
+//      ],
+//    ],
+//  ];
+//
+//  $buidler->doBuildForm('fivestar_preview', $form, $form_state);
+//  $output = $form;
+//  $output['#prefix'] = '<div class="fivestar-star-preview fivestar-' . $form['vote']['#widget']['name'] . '">';
+//  $output['#suffix'] = '</div>';
+//
+//  return \Drupal::service('renderer')->render($output);
 }
 
 /**
@@ -73,9 +74,9 @@ function theme_fivestar_preview_widget($variables) {
 function theme_fivestar_preview($variables) {
   extract($variables, EXTR_SKIP);
   $values = [
-    'average' => 50,
-    'user' => 80,
-    'count' => 20,
+    'vote_average' => 50,
+    'vote_user' => 80,
+    'vote_count' => 20,
   ];
   $settings = [
     'stars' => $stars,
@@ -86,7 +87,7 @@ function theme_fivestar_preview($variables) {
     'text' => $text,
     'title' => $title,
     'autosubmit' => FALSE,
-    'tag' => 'vote',
+    'vote_type' => 'vote',
   ];
 
   $form = drupal_get_form('fivestar_custom_widget', $values, $settings);
@@ -133,6 +134,7 @@ function theme_fivestar_formatter_default($variables) {
     'stars' => $element['#instance_settings']['stars'],
     'widget' => $element['#widget'],
   ];
+
   $star_display = theme('fivestar_static', $variables);
   return theme('fivestar_static_element', [
     'description' => $element['#description'],
@@ -213,19 +215,21 @@ function theme_fivestar_select($variables) {
 function theme_fivestar_static($variables) {
   $rating = $variables['rating'];
   $stars = $variables['stars'];
-  $tag = $variables['tag'];
+  $vote_type = $variables['vote_type'];
   $widget = $variables['widget'];
-  if ($widget['name'] != 'default') {
-    $path = drupal_get_path('module', 'fivestar');
-    drupal_add_css($path . '/css/fivestar.css');
-    drupal_add_css($widget['css']);
-  }
+  //  if ($widget['name'] != 'default') {
+  //    $path = drupal_get_path('module', 'fivestar');
+  //    drupal_add_css($path . '/css/fivestar.css');
+  //    drupal_add_css($widget['css']);
+  //  }
 
   $output = '<div class="fivestar-' . $widget['name'] . '">';
-  $output .= '<div class="fivestar-widget-static fivestar-widget-static-' . $tag . ' fivestar-widget-static-' . $stars . ' clearfix">';
+  $output .= '<div class="fivestar-widget-static fivestar-widget-static-' . $vote_type . ' fivestar-widget-static-' . $stars . ' clearfix">';
+
   if (empty($stars)) {
     $stars = 5;
   }
+
   $numeric_rating = $rating / (100 / $stars);
   for ($n = 1; $n <= $stars; $n++) {
     $star_value = ceil((100 / $stars) * $n);
@@ -250,6 +254,7 @@ function theme_fivestar_static($variables) {
     $output .= '</span></div>';
   }
   $output .= '</div></div>';
+
   return $output;
 }
 
@@ -300,10 +305,11 @@ function theme_fivestar_summary($variables) {
 
     $average_stars = round(($average_rating * $stars) / 100, 1);
     if (!empty($microdata['average_rating']['#attributes'])) {
-      $average_rating_microdata = drupal_attributes($microdata['average_rating']['#attributes']);
+      $average_rating_microdata = ($microdata['average_rating']['#attributes']);
     }
-    $output .= '<span class="average-rating">' . t('Average: !stars',
-        ['!stars' => "<span $average_rating_microdata>$average_stars</span>"]) . '</span>';
+    $output .= '<span class="average-rating">' . t("Average: <span {$average_rating_microdata}>@stars</span>", [
+        '@stars' => $average_stars,
+      ]) . '</span>';
   }
 
   if (isset($votes)) {
@@ -315,12 +321,12 @@ function theme_fivestar_summary($variables) {
     }
     else {
       if (!empty($microdata['rating_count']['#attributes'])) {
-        $rating_count_microdata = drupal_attributes($microdata['rating_count']['#attributes']);
+        $rating_count_microdata = new Attribute($microdata['rating_count']['#attributes']);
       }
       // We don't directly substitute $votes (i.e. use '@count') in format_plural,
       // because it has a span around it which is not translatable.
-      $votes_str = format_plural($votes, '!cnt vote', '!cnt votes', [
-        '!cnt' => '<span ' . $rating_count_microdata . '>' . intval($votes) . '</span>',
+      $votes_str = \Drupal::translation()->formatPlural($votes, '<span ' . $rating_count_microdata . '>@cnt</span> vote', '@cnt votes', [
+        '@cnt' => intval($votes),
       ]);
       if (isset($user_rating) || isset($average_rating)) {
         $output .= ' <span class="total-votes">(' . $votes_str . ')</span>';
@@ -339,22 +345,22 @@ function theme_fivestar_summary($variables) {
  * Display a static fivestar value as stars with a title and description.
  */
 function theme_fivestar_static_element($variables) {
-  $output = '';
+  $output = '<div class="fivestar-static-form-item">';
   if (isset($variables['is_form']) && !$variables['is_form']) {
-    $output .= '<div class="fivestar-static-item">';
+    $output = '<div class="fivestar-static-item">';
   }
-  else {
-    $output .= '<div class="fivestar-static-form-item">';
-  }
-  $element = [
+
+  $element_data = [
     '#type' => 'item',
     '#title' => $variables['title'],
     '#description' => $variables['description'],
+    '#description_display' => 'after',
     '#children' => $variables['star_display'],
   ];
 
-  $output .= theme('form_element', ['element' => $element]);
+  $output .= \Drupal::service('renderer')->render($element_data);
   $output .= '</div>';
+
   return $output;
 }
 
@@ -362,39 +368,44 @@ function theme_fivestar_static_element($variables) {
  * Show a preview of a widget using a custom CSS file.
  */
 function theme_fivestar_output_widget($variables) {
-  $form = [
-    '#post' => [],
-    '#programmed' => FALSE,
-    '#tree' => FALSE,
-    '#parents' => [],
-    '#array_parents' => [],
-    '#required' => FALSE,
-    '#attributes' => [],
-    '#title_display' => 'before',
-  ];
-  $complete_form = [];
-  $form_state = new FormState();
-  $buidler = \Drupal::formBuilder();
-  $form_state->setValues([]);
-  $form_state->setProcessInput(FALSE);
-  $form_state->setCompleteForm($complete_form);
-  $element = $variables['element'];
-
-  $form['vote'] = [
-    '#type' => 'fivestar',
-    '#auto_submit' => FALSE,
-    '#stars' => $element['#settings']['stars'],
-    '#allow_clear' => $element['#settings']['allow_clear'],
-    '#allow_revote' => $element['#settings']['allow_revote'],
-    '#allow_ownvote' => $element['#settings']['allow_ownvote'],
-    '#widget' => $element['#widget'],
-    '#default_value' => $element['#default_value'],
-  ];
-
-  $buidler->doBuildForm('fivestar_preview', $form, $form_state);
-  $output = $form;
-  $output['#prefix'] = '<div class="fivestar-star-preview fivestar-' . $form['vote']['#widget']['name'] . '">';
-  $output['#suffix'] = '</div>';
-
-  return \Drupal::service('renderer')->render($output);
+//  $form = [
+//    '#post' => [],
+//    '#programmed' => FALSE,
+//    '#tree' => FALSE,
+//    '#parents' => [],
+//    '#array_parents' => [],
+//    '#required' => FALSE,
+//    '#attributes' => [],
+//    '#title_display' => 'before',
+//  ];
+//
+//  $complete_form = [];
+//  $form_state = new FormState();
+//  $buidler = \Drupal::formBuilder();
+//  $form_state->setValues([]);
+//  $form_state->setProcessInput(FALSE);
+//  $form_state->setCompleteForm($complete_form);
+//  $element = $variables['element'];
+//
+//  $form['vote'] = [
+//    '#type' => 'fivestar',
+//    '#stars' => $element['#settings']['stars'],
+//    '#allow_clear' => $element['#settings']['allow_clear'],
+//    '#allow_revote' => $element['#settings']['allow_revote'],
+//    '#allow_ownvote' => $element['#settings']['allow_ownvote'],
+//    '#widget' => $element['#widget'],
+//    '#default_value' => $element['#default_value'],
+//    '#values' => $element['#values'],
+//    '#settings' => [
+//      'style' => $element['#widget_settings']['format'],
+//      'text' => $element['#widget_settings']['summary'],
+//    ],
+//  ];
+//
+//  $buidler->doBuildForm('fivestar_preview', $form, $form_state);
+//  $output = $form;
+//  $output['#prefix'] = "<div class=\"fivestar-star-preview fivestar-{$form['vote']['#widget']['name']}\">";
+//  $output['#suffix'] = '</div>';
+//
+//  return \Drupal::service('renderer')->render($output);
 }

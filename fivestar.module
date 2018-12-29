@@ -9,6 +9,7 @@ include_once dirname(__FILE__) . '/includes/fivestar.field.inc';
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Routing\RouteMatchInterface;
+
 /**
  * Implementation of hook_help().
  */
@@ -68,7 +69,7 @@ function fivestar_theme() {
     ],
     'fivestar_static' => [
       'function' => 'theme_fivestar_static',
-      'variables' => ['rating' => NULL, 'stars' => 5, 'tag' => 'vote', 'widget' => ['name' => 'default', 'css' => '']],
+      'variables' => ['rating' => NULL, 'stars' => 5, 'vote_type' => 'vote', 'widget' => ['name' => 'default', 'css' => '']],
       'file' => 'includes/fivestar.theme.inc',
     ],
     'fivestar_static_element' => [
@@ -78,7 +79,13 @@ function fivestar_theme() {
     ],
     'fivestar_summary' => [
       'function' => 'theme_fivestar_summary',
-      'variables' => ['user_rating' => NULL, 'average_rating' => NULL, 'votes' => 0, 'stars' => 5, 'microdata' => []],
+      'variables' => [
+        'user_rating' => NULL,
+        'average_rating' => NULL,
+        'votes' => 0,
+        'stars' => 5,
+        'microdata' => [],
+      ],
       'file' => 'includes/fivestar.theme.inc',
     ],
     // fivestar.admin.inc.
@@ -141,32 +148,19 @@ function _fivestar_variables() {
  * Internal function to handle vote casting, flood control, XSS, IP based
  * voting, etc...
  */
-function _fivestar_cast_vote($entity_type, $id, $value, $tag = NULL, $uid = NULL, $skip_validation = FALSE, $vote_source = NULL) {
-  global $user;
-  $tag = empty($tag) ? 'vote' : $tag;
-  $uid = isset($uid) ? $uid : $user->uid;
-  // Bail out if the user's trying to vote on an invalid object.
-  if (!$skip_validation && !fivestar_validate_target($entity_type, $id, $tag, $uid)) {
-    return [];
-  }
+function _fivestar_cast_vote($entity_type, $id, $value, $vote_type = NULL, $uid = NULL, $skip_validation = FALSE, $vote_source = NULL) {
+  $vote_type = empty($vote_type) ? 'vote' : $vote_type;
+  $uid = is_numeric($uid) ? $uid : \Drupal::currentUser()->id();
+
   // Sanity-check the incoming values.
   if (is_numeric($id) && is_numeric($value)) {
-    if ($value > 100) {
-      $value = 100;
-    }
-
     // Get the user's current vote.
-    $criteria = ['entity_type' => $entity_type, 'entity_id' => $id, 'tag' => $tag, 'uid' => $uid];
-    // Get the unique identifier for the user (IP Address if anonymous).
-    if ($vote_source != NULL) {
-      $user_criteria = ['vote_source' => $vote_source];
-      $limit = 1;
-    }
-    else {
-      $user_criteria = votingapi_current_user_identifier();
-      $limit = 0;
-    }
-    $user_votes = votingapi_select_votes($criteria + $user_criteria, $limit);
+    $criteria = [
+      'entity_type' => $entity_type,
+      'entity_id' => $id,
+      'vote_type' => $vote_type,
+      'uid' => $uid,
+    ];
 
     if ($value == 0) {
       votingapi_delete_votes($user_votes);
@@ -178,7 +172,7 @@ function _fivestar_cast_vote($entity_type, $id, $value, $tag = NULL, $uid = NULL
 
     // Moving the calculationg after saving/deleting the vote but before getting the votes.
     votingapi_recalculate_results($entity_type, $id);
-    return fivestar_get_votes($entity_type, $id, $tag, $uid);
+//    return fivestar_get_votes($entity_type, $id, $vote_type, $uid);
   }
 }
 
@@ -193,7 +187,7 @@ function _fivestar_cast_vote($entity_type, $id, $value, $tag = NULL, $uid = NULL
  *   The Entity type for which to retrieve votes.
  * @param $id
  *   The ID for which to retrieve votes.
- * @param $tag
+ * @param $vote_type
  *   The VotingAPI tag for which to retrieve votes.
  * @param $uid
  *   Optional. A user ID for which to retrieve votes.
@@ -204,7 +198,7 @@ function _fivestar_cast_vote($entity_type, $id, $value, $tag = NULL, $uid = NULL
  *   - count: An array of VotingAPI results, including the count 'value'.
  *   - user: An array of VotingAPI results, including the user's vote 'value'.
  */
-function fivestar_get_votes_multiple($entity_type, $ids, $tag = 'vote', $uid = NULL) {
+function fivestar_get_votes_multiple($entity_type, $ids, $vote_type = 'vote', $uid = NULL) {
   global $user;
 
   if (!isset($uid)) {
@@ -215,7 +209,7 @@ function fivestar_get_votes_multiple($entity_type, $ids, $tag = 'vote', $uid = N
     'entity_type' => $entity_type,
     'entity_id' => $ids,
     'value_type' => 'percent',
-    'tag' => $tag,
+    'vote_type' => $vote_type,
   ];
 
   $votes = [];
@@ -264,8 +258,8 @@ function fivestar_get_votes_multiple($entity_type, $ids, $tag = 'vote', $uid = N
 /**
  *
  */
-function fivestar_get_votes($entity_type, $id, $tag = 'vote', $uid = NULL) {
-  $multiple = fivestar_get_votes_multiple($entity_type, [$id], $tag, $uid);
+function fivestar_get_votes($entity_type, $id, $vote_type = 'vote', $uid = NULL) {
+  $multiple = fivestar_get_votes_multiple($entity_type, [$id], $vote_type, $uid);
   return $multiple[$entity_type][$id];
 }
 
@@ -276,19 +270,19 @@ function fivestar_get_votes($entity_type, $id, $tag = 'vote', $uid = NULL) {
  *   Type of target.
  * @param $id
  *   Identifier within the type.
- * @param $tag
+ * @param $vote_type
  *   The VotingAPI tag string.
  * @param $uid
  *   The user trying to cast the vote.
  *
  * @return bool
  */
-function fivestar_validate_target($entity_type, $id, $tag, $uid = NULL) {
+function fivestar_validate_target($entity_type, $id, $vote_type, $uid = NULL) {
   if (!isset($uid)) {
     $uid = $GLOBALS['user']->uid;
   }
 
-  $access = module_invoke_all('fivestar_access', $entity_type, $id, $tag, $uid);
+  $access = module_invoke_all('fivestar_access', $entity_type, $id, $vote_type, $uid);
   foreach ($access as $result) {
     if ($result == TRUE) {
       return TRUE;
@@ -310,7 +304,7 @@ function fivestar_validate_target($entity_type, $id, $tag, $uid = NULL) {
  *   Type entity.
  * @param $id
  *   Identifier within the type.
- * @param $tag
+ * @param $vote_type
  *   The VotingAPI tag string.
  * @param $uid
  *   The user ID trying to cast the vote.
@@ -322,11 +316,11 @@ function fivestar_validate_target($entity_type, $id, $tag, $uid = NULL) {
  *   of permissions defined in other modules, return FALSE. Note if all
  *   modules return NULL, stating no preference, then access will be denied.
  */
-function fivestar_fivestar_access($entity_type, $id, $tag, $uid) {
+function fivestar_fivestar_access($entity_type, $id, $vote_type, $uid) {
   // Check to see if there is a field instance on this entity.
   $fields = field_read_fields(['module' => 'fivestar']);
   foreach ($fields as $field) {
-    if ($field['settings']['axis'] == $tag) {
+    if ($field['settings']['axis'] == $vote_type) {
       $params = [
         'entity_type' => $entity_type,
         'field_name' => $field['field_name'],
@@ -458,7 +452,6 @@ function fivestar_custom_widget($form, &$form_state, $values, $settings) {
   $form['vote'] = [
     '#type' => 'fivestar',
     '#stars' => $settings['stars'],
-    '#auto_submit' => isset($settings['autosubmit']) ? $settings['autosubmit'] : TRUE,
     '#allow_clear' => $settings['allow_clear'],
     '#allow_revote' => $settings['allow_revote'],
     '#allow_ownvote' => $settings['allow_ownvote'],
@@ -482,9 +475,8 @@ function fivestar_custom_widget($form, &$form_state, $values, $settings) {
  * Submit handler for the above form (non-javascript version).
  */
 function fivestar_form_submit($form, &$form_state) {
-
   // Cast the vote.
-  _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['tag']);
+  _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['vote_type']);
 
   // Set a message that the vote was received.
   if ($form_state['values']['vote'] === '0') {
@@ -498,37 +490,25 @@ function fivestar_form_submit($form, &$form_state) {
 /**
  * AJAX submit handler for fivestar_custom_widget.
  */
-function fivestar_ajax_submit($form, $form_state) {
-  if (!empty($form_state['settings']['content_id'])) {
-    $entity_manager = \Drupal::entityTypeManager();
-    $entity = $entity_manager->getStorage($form_state['settings']['entity_type'])->load([$form_state['settings']['entity_id']]);
-    $entity = reset($entity);
-    _fivestar_update_field_value($form_state['settings']['content_type'], $entity, $form_state['settings']['field_name'], $form_state['settings']['langcode'], $form_state['values']['vote']);
-    $votes = _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['tag']);
+function fivestar_ajax_submit(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $context = $form_state->get('context');
+
+  if (isset($context['entity'])) {
+    $entity = $context['entity'];
+    $fivestar_field_name = $context['field_definition']->getName();
+    if ($entity->hasField($fivestar_field_name)) {
+      // For votingapi value will be save during save rating value to field storage.
+      $entity->set($fivestar_field_name, $form_state->getValue('vote'));
+      $entity->save();
+    }
   }
 
-  $values = [];
-  $values['user'] = isset($votes['user']['value']) ? $votes['user']['value'] : 0;
-  $values['average'] = isset($votes['average']['value']) ? $votes['average']['value'] : 0;
-  $values['count'] = isset($votes['count']['value']) ? $votes['count']['value'] : 0;
+//  $response = new AjaxResponse();
+//  $response->addCommand(new ReplaceCommand("#{$form_state->get('uniq_id')}", $form));
+//
+//  return $response;
 
-  // We need to process the 'fivestar' element with the new values.
-  $form['vote']['#values'] = $values;
-  // Also need to pass on form_state and the complete form, just like form_builder() does.
-  $new_element = fivestar_expand($form['vote'], $form_state, $form_state['complete form']);
-  // Update the description. Since it doesn't account of our cast vote above.
-  // TODO: Look into all this, I honestly don't like it and it's a bit weird.
-  $form['vote']['vote']['#description'] = isset($new_element['vote']['#description']) ? $new_element['vote']['#description'] : '';
-
-  return [
-    '#type' => 'ajax',
-    '#commands' => [
-      [
-        'command' => 'fivestarUpdate',
-        'data' => drupal_render($form['vote']),
-      ],
-    ],
-  ];
+  return $form;
 }
 
 /**
@@ -544,11 +524,11 @@ function fivestar_validate($element, &$form_state) {
  * Implementation of hook_votingapi_metadata_alter().
  */
 function fivestar_votingapi_metadata_alter(&$data) {
-  foreach (fivestar_get_tags() as $tag) {
+  foreach (fivestar_get_tags() as $vote_type) {
     // Add several custom tags that are being used by fivestar.
-    $data['tags'][$tag] = [
-      'name' => t($tag),
-      'description' => t('@tag used by fivestar.', ['@tag' => $tag]),
+    $data['tags'][$vote_type] = [
+      'name' => t($vote_type),
+      'description' => t('@vote_type used by fivestar.', ['@vote_type' => $vote_type]),
       'module' => 'fivestar',
     ];
   }
@@ -579,139 +559,139 @@ function fivestar_get_tags() {
   return $tags;
 }
 
-/**
- * Implements hook_fivestar_target_info().
- */
-function fivestar_fivestar_target_info($field, $instance) {
-  $entity_type = $instance['entity_type'];
-  $bundle = $instance['bundle'];
-  $options = [
-    'none' => [
-      'title' => t('None'),
-    ],
-  ];
-  $module_handler = \Drupal::moduleHandler();
-  // Add node_referrence support.
-  if ($module_handler->moduleExists('node_reference')) {
-    $field_names = array_keys(field_read_fields(['module' => 'node_reference']));
-    if (!empty($field_names)) {
-      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
-      if (!empty($field_instances)) {
-        foreach ($field_instances as $field_instance) {
-          $options[$field_instance['field_name']] = [
-            'title' => t('Node reference: @field', ['@field' => $field_instance['field_name']]),
-            'callback' => '_fivestar_target_node_reference',
-          ];
-        }
-      }
-    }
-  }
+///**
+// * Implements hook_fivestar_target_info().
+// */
+//function fivestar_fivestar_target_info($field, $instance) {
+//  $entity_type = $instance['entity_type'];
+//  $bundle = $instance['bundle'];
+//  $options = [
+//    'none' => [
+//      'title' => t('None'),
+//    ],
+//  ];
+//  $module_handler = \Drupal::moduleHandler();
+//  // Add node_referrence support.
+//  if ($module_handler->moduleExists('node_reference')) {
+//    $field_names = array_keys(field_read_fields(['module' => 'node_reference']));
+//    if (!empty($field_names)) {
+//      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
+//      if (!empty($field_instances)) {
+//        foreach ($field_instances as $field_instance) {
+//          $options[$field_instance['field_name']] = [
+//            'title' => t('Node reference: @field', ['@field' => $field_instance['field_name']]),
+//            'callback' => '_fivestar_target_node_reference',
+//          ];
+//        }
+//      }
+//    }
+//  }
+//
+//  // Add entityreference support.
+//  if ($module_handler->moduleExists('entityreference')) {
+//    $field_names = array_keys(field_read_fields(['module' => 'entityreference']));
+//    if (!empty($field_names)) {
+//      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
+//      if (!empty($field_instances)) {
+//        foreach ($field_instances as $field_instance) {
+//          $options[$field_instance['field_name']] = [
+//            'title' => t('Entity reference: @field', ['@field' => $field_instance['field_name']]),
+//            'callback' => '_fivestar_target_entityreference',
+//          ];
+//        }
+//      }
+//    }
+//  }
+//
+//  // Add user reference support.
+//  if ($module_handler->moduleExists('user_reference')) {
+//    $field_names = array_keys(field_read_fields(['module' => 'user_reference']));
+//    if (!empty($field_names)) {
+//      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
+//      if (!empty($field_instances)) {
+//        foreach ($field_instances as $field_instance) {
+//          $options[$field_instance['field_name']] = [
+//            'title' => t('User reference: @field', ['@field' => $field_instance['field_name']]),
+//            'callback' => '_fivestar_target_user_reference',
+//          ];
+//        }
+//      }
+//    }
+//  }
+//
+//  // Add comment module support.
+//  if ($instance['entity_type'] == 'comment') {
+//    $options['parent_node'] = [
+//      'title' => t('Parent Node'),
+//      'callback' => '_fivestar_target_comment_parent_node',
+//    ];
+//  }
+//
+//  return $options;
+//}
 
-  // Add entityreference support.
-  if ($module_handler->moduleExists('entityreference')) {
-    $field_names = array_keys(field_read_fields(['module' => 'entityreference']));
-    if (!empty($field_names)) {
-      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
-      if (!empty($field_instances)) {
-        foreach ($field_instances as $field_instance) {
-          $options[$field_instance['field_name']] = [
-            'title' => t('Entity reference: @field', ['@field' => $field_instance['field_name']]),
-            'callback' => '_fivestar_target_entityreference',
-          ];
-        }
-      }
-    }
-  }
-
-  // Add user reference support.
-  if ($module_handler->moduleExists('user_reference')) {
-    $field_names = array_keys(field_read_fields(['module' => 'user_reference']));
-    if (!empty($field_names)) {
-      $field_instances = field_read_instances(['entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names]);
-      if (!empty($field_instances)) {
-        foreach ($field_instances as $field_instance) {
-          $options[$field_instance['field_name']] = [
-            'title' => t('User reference: @field', ['@field' => $field_instance['field_name']]),
-            'callback' => '_fivestar_target_user_reference',
-          ];
-        }
-      }
-    }
-  }
-
-  // Add comment module support.
-  if ($instance['entity_type'] == 'comment') {
-    $options['parent_node'] = [
-      'title' => t('Parent Node'),
-      'callback' => '_fivestar_target_comment_parent_node',
-    ];
-  }
-
-  return $options;
-}
-
-/**
- *
- * @return array
- *   array('entity_type', 'entity_id').
- */
-function _fivestar_target_node_reference($entity, $field, $instance, $langcode) {
-  $target = [];
-
-  $node_reference = $instance['settings']['target'];
-  if (isset($entity->{$node_reference}[$langcode][0]) && is_numeric($entity->{$node_reference}[$langcode][0]['nid'])) {
-    $target['entity_id'] = $entity->{$node_reference}[$langcode][0]['nid'];
-    $target['entity_type'] = 'node';
-  }
-
-  return $target;
-}
-
-/**
- * @return (array) array('entity_type', 'entity_id')
- */
-function _fivestar_target_entityreference($entity, $field, $instance, $langcode) {
-  $target = [];
-
-  $entityreference = $instance['settings']['target'];
-
-  // Retrieve entity settings for the referenced field.
-  $field_info = field_info_field($entityreference);
-
-  if (isset($entity->{$entityreference}[$langcode][0]) && isset($entity->{$entityreference}[$langcode][0]['target_id']) && is_numeric($entity->{$entityreference}[$langcode][0]['target_id'])) {
-    $target['entity_id'] = $entity->{$entityreference}[$langcode][0]['target_id'];
-    $target['entity_type'] = $field_info['settings']['target_type'];
-  }
-
-  return $target;
-}
-
-/**
- *
- * @return array
- *   array('entity_type', 'entity_id').
- */
-function _fivestar_target_user_reference($entity, $field, $instance, $langcode) {
-  $target = [];
-
-  $user_reference = $instance['settings']['target'];
-  if (isset($entity->{$user_reference}[$langcode][0]) && is_numeric($entity->{$user_reference}[$langcode][0]['uid'])) {
-    $target['entity_id'] = $entity->{$user_reference}[$langcode][0]['uid'];
-    $target['entity_type'] = 'user';
-  }
-
-  return $target;
-}
-
-/**
- *
- */
-function _fivestar_target_comment_parent_node($entity, $field, $instance, $langcode) {
-  return [
-    'entity_id' => $entity->nid,
-    'entity_type' => 'node',
-  ];
-}
+///**
+// *
+// * @return array
+// *   array('entity_type', 'entity_id').
+// */
+//function _fivestar_target_node_reference($entity, $field, $instance, $langcode) {
+//  $target = [];
+//
+//  $node_reference = $instance['settings']['target'];
+//  if (isset($entity->{$node_reference}[$langcode][0]) && is_numeric($entity->{$node_reference}[$langcode][0]['nid'])) {
+//    $target['entity_id'] = $entity->{$node_reference}[$langcode][0]['nid'];
+//    $target['entity_type'] = 'node';
+//  }
+//
+//  return $target;
+//}
+//
+///**
+// * @return (array) array('entity_type', 'entity_id')
+// */
+//function _fivestar_target_entityreference($entity, $field, $instance, $langcode) {
+//  $target = [];
+//
+//  $entityreference = $instance['settings']['target'];
+//
+//  // Retrieve entity settings for the referenced field.
+//  $field_info = field_info_field($entityreference);
+//
+//  if (isset($entity->{$entityreference}[$langcode][0]) && isset($entity->{$entityreference}[$langcode][0]['target_id']) && is_numeric($entity->{$entityreference}[$langcode][0]['target_id'])) {
+//    $target['entity_id'] = $entity->{$entityreference}[$langcode][0]['target_id'];
+//    $target['entity_type'] = $field_info['settings']['target_type'];
+//  }
+//
+//  return $target;
+//}
+//
+///**
+// *
+// * @return array
+// *   array('entity_type', 'entity_id').
+// */
+//function _fivestar_target_user_reference($entity, $field, $instance, $langcode) {
+//  $target = [];
+//
+//  $user_reference = $instance['settings']['target'];
+//  if (isset($entity->{$user_reference}[$langcode][0]) && is_numeric($entity->{$user_reference}[$langcode][0]['uid'])) {
+//    $target['entity_id'] = $entity->{$user_reference}[$langcode][0]['uid'];
+//    $target['entity_type'] = 'user';
+//  }
+//
+//  return $target;
+//}
+//
+///**
+// *
+// */
+//function _fivestar_target_comment_parent_node($entity, $field, $instance, $langcode) {
+//  return [
+//    'entity_id' => $entity->nid,
+//    'entity_type' => 'node',
+//  ];
+//}
 
 /**
  * Implements hook_library_info_build().
@@ -722,7 +702,7 @@ function fivestar_library_info_build() {
   foreach (\Drupal::moduleHandler()->invokeAll('fivestar_widgets') as $path => $widget) {
     // @todo ok, that's wierd.
     $path = str_replace($module_path . '/', '', $path);
-    $name = Unicode::strtolower($widget);
+    $name = mb_strtolower($widget);
     $libraries["fivestar.{$name}"] = [
       'css' => [
         'component' => [

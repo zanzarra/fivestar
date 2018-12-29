@@ -28,10 +28,11 @@ abstract class FiveStarFormatterBase extends FormatterBase {
   }
 
   /**
+   * Return list of all available widgets.
+   *
    * @return array
    */
   protected function getAllWidget() {
     return \Drupal::moduleHandler()->invokeAll('fivestar_widgets');
   }
-
 }

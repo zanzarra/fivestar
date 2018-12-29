@@ -2,11 +2,12 @@
 
 namespace Drupal\fivestar\Plugin\Field\FieldType;
 
+use Drupal\Core\Link;
 use Drupal\Core\Field\FieldItemBase;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\Core\Language\Language;
-use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TypedData\DataDefinition;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Plugin implementation of the 'fivestart' field type.
@@ -20,12 +21,6 @@ use Drupal\Core\Form\FormStateInterface;
  * )
  */
 class FivestarItem extends FieldItemBase {
-  /**
-   * Definitions of the contained properties.
-   *
-   * @var array
-   */
-  static $propertyDefinitions;
 
   /**
    * {@inheritdoc}
@@ -59,7 +54,7 @@ class FivestarItem extends FieldItemBase {
   }
 
   /**
-   * @return array
+   * {@inheritdoc}
    */
   public static function defaultFieldSettings() {
     return [
@@ -68,16 +63,18 @@ class FivestarItem extends FieldItemBase {
       'allow_revote' => TRUE,
       'allow_ownvote' => TRUE,
       'rated_while' => 'viewing',
-      'target' => '',
+      'enable_voting_target' => FALSE,
+      'target_bridge_field' => '',
+      'target_fivestar_field' => '',
     ] + parent::defaultFieldSettings();
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public static function defaultStorageSettings() {
     return [
-      'voting_tag' => 'vote',
+      'vote_type' => 'vote',
     ] + parent::defaultStorageSettings();
   }
 
@@ -86,13 +83,23 @@ class FivestarItem extends FieldItemBase {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $element = [];
-    $element['voting_tag'] = [
+    $vote_manager = \Drupal::service('fivestar.vote_manager');
+    $vote_types_link = Link::createFromRoute($this->t('here'), 'entity.vote_type.collection')->toString();
+
+    $element['vote_type'] = [
       '#type' => 'select',
       '#required' => TRUE,
-      '#title' => 'Voting Tag',
-      '#options' => fivestar_get_tags(),
-      '#description' => $this->t('The tag this rating will affect. Enter a property on which that this rating will affect, such as <em>quality</em>, <em>satisfaction</em>, <em>overall</em>, etc.'),
-      '#default_value' => $this->getSetting('voting_tag'),
+      '#title' => $this->t('Vote type'),
+      '#options' => $vote_manager->getVoteTypes(),
+      '#description' => $this->t(
+        'The vote type this rating will affect. 
+          Enter a property on which that this rating will affect, 
+          such as <em>quality</em>, <em>satisfaction</em>, <em>overall</em>, etc.
+          You can add new vote type %vote_types_link.', [
+            '%vote_types_link' => $vote_types_link,
+        ]
+      ),
+      '#default_value' => $this->getSetting('vote_type'),
       '#disabled' => $has_data,
     ];
 
@@ -104,35 +111,30 @@ class FivestarItem extends FieldItemBase {
    */
   public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
     $element = [];
-
     $element['stars'] = [
       '#type' => 'select',
       '#title' => $this->t('Number of stars'),
       '#options' => array_combine(range(1, 10), range(1, 10)),
       '#default_value' => $this->getSetting('stars'),
     ];
-
     $element['allow_clear'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to cancel their ratings.'),
       '#default_value' => $this->getSetting('allow_clear'),
       '#return_value' => 1,
     ];
-
     $element['allow_revote'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to re-vote on already voted content.'),
       '#default_value' => $this->getSetting('allow_revote'),
       '#return_value' => 1,
     ];
-
     $element['allow_ownvote'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to vote on their own content.'),
       '#default_value' => $this->getSetting('allow_ownvote'),
       '#return_value' => 1,
     ];
-
     $element['rated_while'] = [
       '#type' => 'radios',
       '#default_value' => $this->getSetting('rated_while'),
@@ -142,128 +144,181 @@ class FivestarItem extends FieldItemBase {
         'editing' => 'Rated while editing',
       ],
     ];
-
-    // FIXME: Vijay
-    // $options = $this->fivestar_get_targets($field, $instance);.
-    $options = [];
-    $element['target'] = [
-      '#title' => $this->t('Voting target'),
-      '#type' => 'select',
-      // FIXME: Vijay
-      // '#default_value' => (isset($settings['target']) && $instance['widget']['type'] != 'exposed') ? $settings['target'] : 'none',.
-      '#options' => $options,
-      '#description' => $this->t('The voting target will make the value of this field cast a vote on another node. Use node reference fields module to create advanced reviews. Use the Parent Node Target when using fivestar with comments. More information available on the <a href="http://drupal.org/handbook/modules/fivestar">Fivestar handbook page</a>.'),
-      // FIXME: Vijay
-      // '#access' => (count($options) > 1 && $instance['widget']['type'] != 'exposed'),.
+    $element['enable_voting_target'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Set voting target'),
+      '#default_value' => $this->getSetting('enable_voting_target'),
+    ];
+    $states = [
+      'visible' => [
+        ':input[name="settings[enable_voting_target]"]' => ['checked' => TRUE],
+      ],
+      'required' => [
+        ':input[name="settings[enable_voting_target]"]' => ['checked' => TRUE],
+      ],
+    ];
+    $element['target_bridge_field'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Target bridge field'),
+      '#description' => $this->t(
+        'Machine name of field that binds current entity with entity that contain target fivestar field. 
+        The field should have "entity_reference" type.'
+      ),
+      '#states' => $states,
+      '#default_value' => $this->getSetting('target_bridge_field'),
+    ];
+    $element['target_fivestar_field'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Target fivestar field'),
+      '#description' => $this->t('Machine name of fivestar field which shuld affect after vote.'),
+      '#states' => $states,
+      '#default_value' => $this->getSetting('target_fivestar_field'),
+    ];
+    $element['#element_validate'] = [
+      [get_class($this), 'fieldSettingsFormValidate'],
     ];
 
+    // @todo try to find the way to omit it.
+    $form_state->set('host_entity', $this->getEntity());
+
     return $element;
+  }
+
+  /**
+   * Validate callback: check field settings.
+   */
+  public static function fieldSettingsFormValidate(array $form, FormStateInterface $form_state) {
+    $host_entity = $form_state->get('host_entity');
+    $field_settings = $form_state->getValue('settings');
+
+    // Validate voting target settings.
+    if ($field_settings['enable_voting_target'] == 1) {
+      // Check if bridge field exist.
+      if (!$host_entity->hasField($field_settings['target_bridge_field'])) {
+        $form_state->setErrorByName(
+          'target_bridge_field',
+          t('The host entity doesn\'t contain field: "@field_name"', [
+            '@field_name' => $field_settings['target_bridge_field'],
+          ])
+        );
+        return;
+      }
+
+      // Check if bridge field has correct type.
+      $field_type = $host_entity->get($field_settings['target_bridge_field'])->getFieldDefinition()->getType();
+      if ($field_type != 'entity_reference') {
+        $form_state->setErrorByName(
+          'target_bridge_field',
+          t('The bridge field must have "entity_reference" type. The entered field has type: "@field_type"', [
+            '@field_type' => $field_type,
+          ])
+        );
+        return;
+      }
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function isEmpty() {
-    return parent::isEmpty();
-    $item = $this->getFieldDefinition()
-      ->getItemDefinition()
-      ->getSetting('rating');
-    return empty($item) || $item == '-';
+    $rating = $this->get('rating')->getValue();
+    return $rating === NULL || $rating === '';
   }
 
   /**
    * {@inheritdoc}
    */
   public function postSave($update) {
-    // $this->fieldOperations();
+    $vote_rating = 0;
+    $entity = $this->getEntity();
+    $field_definition = $this->getFieldDefinition();
+    $field_name = $field_definition->getName();
+    $field_settings = $field_definition->getSettings();
+    $vote_manager = \Drupal::service('fivestar.vote_manager');
+    $target_entity = $this->getTargetEntity($entity, $field_settings);
+
+    if ($entity->isPublished()) {
+      $vote_rating = $entity->get($field_name)->rating ?: 0;
+    }
+
+    // Delete previous user vote.
+    $current_user = \Drupal::currentUser();
+    $criteria = [
+      'entity_id' => $entity->id(),
+      'entity_type' => $entity->getEntityTypeId(),
+      'type' => $field_settings['vote_type'],
+      'user_id' => $current_user->id(),
+    ];
+    if ($current_user->isAnonymous()) {
+      $criteria['vote_source'] = hash('sha256', serialize(\Drupal::request()->getClientIp()));
+    }
+    foreach ($vote_manager->getVotesByCriteria($criteria) as $vote) {
+      $vote->delete();
+    }
+
+    $vote_manager->addVote($entity, $vote_rating);
+    if (!empty($target_entity)) {
+      $vote_manager->addVote($target_entity, $vote_rating);
+    }
   }
 
   /**
+   * Get target entity.
    *
+   * @param FieldableEntityInterface $entity
+   * @param array $field_settings
+   * @return FieldableEntityInterface|NULL
    */
-  protected function fieldOperations($op = NULL) {
-    $entity = $this->getEntity();
-    $entity_type = $entity->getEntityType();
-    $langcode = $this->getLangcode();
-    // FIXME: Vijay
-    // return;.
-    foreach ($items as $delta => $item) {
-      if ((isset($entity->status) && !$entity->status) || $op == 'delete') {
-        $rating = 0;
-      }
-      else {
-        $rating = (isset($items[$delta]['rating'])) ? $items[$delta]['rating'] : 0;
-      }
-      // FIXME: Vijay
-      // $target = $this->_fivestar_field_target($entity, $field, $instance, $langcode);.
-      if (!empty($target)) {
-        if ($entity_type == 'comment' && $op == 'delete') {
-          $target['vote_source'] = $entity->hostname;
-        }
-        else {
-          $target['vote_source'] = NULL;
-        }
-        // FIXME: Vijay
-        // _fivestar_cast_vote($target['entity_type'], $target['entity_id'], $rating, $field['settings']['axis'], $entity->uid, TRUE, $target['vote_source']);
-        // votingapi_recalculate_results($target['entity_type'], $target['entity_id']);.
-      }
-      // The original callback is only called for a single updated field, but the Field API
-      // then updates all fields of the entity. For an update, the Field API first deletes
-      // the equivalent row in the database and then adds a new row based on the
-      // information in $items here. If there are multiple Fivestar fields on an entity, the
-      // one being updated is handled ok ('rating' having already been set to the new value),
-      // but other Fivestar fields are set to NULL as 'rating' isn't set - not what an update
-      // would be expected to do. So set 'rating' for all of the Fivestar fields from the
-      // existing user data in $items. This preserves the user vote thru Field API's
-      // delete/re-insert process.
-      if (!isset($items[$delta]['rating'])) {
-        $items[$delta]['rating'] = $items[$delta]['user'];
-      }
+  public function getTargetEntity(FieldableEntityInterface $entity, array $field_settings) {
+    if ($field_settings['enable_voting_target'] !== 1) {
+      return NULL;
     }
+    if (!$entity->hasField($field_settings['target_bridge_field'])) {
+      return NULL;
+    }
+
+    $bridge_entity = $entity->{$field_settings['target_bridge_field']}->entity;
+    if ($bridge_entity && $bridge_entity->hasField($field_settings['target_fivestar_field'])) {
+      return $bridge_entity;
+    }
+
+    return NULL;
   }
 
   /**
    * {@inheritdoc}
    */
   public function delete() {
-    // $this->fieldOperations('delete');.
-  }
+    $del_entity = $this->getEntity();
+    $field_settings = $this->getFieldDefinition()->getSettings();
+    $target_entity = $this->getTargetEntity($del_entity, $field_settings);
 
-  /**
-   * Helper function to find the id that should be rated when a field is changed.
-   */
-  public function _fivestar_field_target($entity, $field, $instance, $langcode) {
-    if ($instance['widget']['type'] == 'exposed') {
-      return NULL;
+    if (!$target_entity) {
+      return;
     }
-    if (isset($instance['settings']['target'])) {
-      $target = $this->fivestar_get_targets($field, $instance, $instance['settings']['target'], $entity, $langcode);
-    }
-    else {
-      $target = [
-        'entity_id' => $entity->id(),
-        'entity_type' => $instance['entity_type'],
-      ];
-    }
-    return $target;
-  }
 
-  /**
-   *
-   */
-  public function fivestar_get_targets($field, $instance, $key = FALSE, $entity = FALSE, $langcode = Language::LANGCODE_NOT_SPECIFIED) {
-    $options = [];
-    $targets = \Drupal::moduleHandler()
-      ->invokeAll('fivestar_target_info', [$field, $instance]);
-    if ($key == FALSE) {
-      foreach ($targets as $target => $info) {
-        $options[$target] = $info['title'];
-      }
-      return $options;
-    }
-    else {
-      if (isset($targets[$key]) && !empty($targets[$key]['callback']) && function_exists($targets[$key]['callback'])) {
-        return call_user_func($targets[$key]['callback'], $entity, $field, $instance, $langcode);
+    $vote_storage = \Drupal::entityTypeManager()->getStorage('vote');
+    $votes = $vote_storage->loadByProperties([
+      'entity_type' => $del_entity->getEntityTypeId(),
+      'entity_id' => $del_entity->id(),
+    ]);
+
+    foreach ($votes as $vote) {
+      // Get target vote.
+
+      // @TODO vote criteria
+      $target_votes = $vote_storage->loadByProperties([
+        'entity_type' => $target_entity->getEntityTypeId(),
+        'entity_id' => $target_entity->id(),
+        'type' => $vote->bundle(),
+        'user_id' => $vote->getOwnerId(),
+        'value' => $vote->getValue(),
+        'vote_source' => $vote->getSource(),
+      ]);
+
+      foreach ($target_votes as $target_vote) {
+        $target_vote->delete();
       }
     }
   }

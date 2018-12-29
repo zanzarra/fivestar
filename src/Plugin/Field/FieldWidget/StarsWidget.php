@@ -2,10 +2,9 @@
 
 namespace Drupal\fivestar\Plugin\Field\FieldWidget;
 
-use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
-use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 
 /**
  * Plugin implementation of the 'fivestar_stars' widget.
@@ -25,6 +24,8 @@ class StarsWidget extends FiveStartWidgetBase {
    */
   public static function defaultSettings() {
     return [
+      'display_format' => 'average',
+      'text_format' => 'none',
       'fivestar_widget' => drupal_get_path('module', 'fivestar') . '/widgets/basic/basic.css',
     ] + parent::defaultSettings();
   }
@@ -58,6 +59,7 @@ class StarsWidget extends FiveStartWidgetBase {
       $element[$css]['#description'] = \Drupal::service('renderer')
         ->render($vars);
     }
+
     return $element;
   }
 
@@ -67,26 +69,14 @@ class StarsWidget extends FiveStartWidgetBase {
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $widgets = $this->getAllWidget();
     $active = $this->getSetting('fivestar_widget');
-    $widget = [
-      'name' => isset($widgets[$active]) ? Unicode::strtolower($widgets[$active]) : 'default',
+    $display_settings = [
+      'name' => isset($widgets[$active]) ? mb_strtolower($widgets[$active]) : 'default',
       'css' => $active,
-    ];
-
-    $values = [
-      'user' => 0,
-      'average' => 0,
-      'count' => 0,
-    ];
-
-    $settings = $items[$delta]->getFieldDefinition()
-      ->getSettings() + [
-        'text' => 'none',
-        'style' => 'user',
-      ];
-
-    $element += [
-      '#type' => 'item',
-    ];
+    ] + $this->getSettings();
+    $settings = $items[$delta]->getFieldDefinition()->getSettings();
+    $is_field_config_form = ($form_state->getBuildInfo()['form_id'] == 'field_config_edit_form');
+    // @todo need to leave comment.
+    $voting_is_allowed = (bool) ($settings['rated_while'] == 'editing') || $is_field_config_form;
 
     $element['rating'] = [
       '#type' => 'fivestar',
@@ -95,10 +85,11 @@ class StarsWidget extends FiveStartWidgetBase {
       '#allow_revote' => $settings['allow_revote'],
       '#allow_ownvote' => $settings['allow_ownvote'],
       '#default_value' => isset($items[$delta]->rating) ? $items[$delta]->rating : 0,
-      '#widget' => $widget,
-      '#settings' => $settings,
-      '#values' => $values,
+      '#widget' => $display_settings,
+      '#settings' => $display_settings,
+      '#disabled' => !$voting_is_allowed,
     ];
+
     return $element;
   }
 

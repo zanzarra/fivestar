@@ -1,0 +1,7 @@
+services:
+  fivestar.vote_manager:
+    class: Drupal\fivestar\VoteManager
+    arguments: ['@entity_type.manager']
+  fivestar.vote_result_manager:
+    class: Drupal\fivestar\VoteResultManager
+    arguments: [ '@plugin.manager.votingapi.resultfunction']

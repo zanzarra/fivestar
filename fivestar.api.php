@@ -54,7 +54,7 @@ function hook_fivestar_widgets() {
  * @see fivestar_validate_target()
  * @see fivestar_fivestar_access()
  */
-function hook_fivestar_access($entity_type, $id, $tag, $uid) {
+function hook_fivestar_access($entity_type, $id, $vote_type, $uid) {
   if ($uid == 1) {
     // We are never going to allow the admin user case a fivestar vote.
     return FALSE;
