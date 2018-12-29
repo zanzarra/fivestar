@@ -41,7 +41,7 @@ class SelectWidget extends FiveStartWidgetBase {
     $element['rating'] = [
       '#type' => 'select',
       '#empty_option' => $this->t('Select rating:'),
-      '#empty_value' => '0',
+      '#empty_value' => '-',
       '#options' => $options,
       '#required' => $items[$delta]->getFieldDefinition()->isRequired(),
       '#default_value' => isset($items[$delta]->rating) ? $items[$delta]->rating : 0,

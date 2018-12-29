@@ -26,7 +26,7 @@ class Fivestar extends FormElement {
       '#allow_revote' => FALSE,
       '#allow_ownvote' => FALSE,
       '#ajax' => NULL,
-      '#disabled' => FALSE,
+      '#show_static_result' => FALSE,
       '#process' => [
         [$class, 'process'],
         [$class, 'processAjaxForm'],
@@ -69,7 +69,7 @@ class Fivestar extends FormElement {
       $title = $complete_form['#node']->title;
     }
 
-    $options = ['0' => t('Select rating')];
+    $options = ['-' => t('Select rating')];
     for ($i = 1; $i <= $element['#stars']; $i++) {
       $this_value = ceil($i * 100 / $element['#stars']);
       $options[$this_value] = t('Give @title @star/@count', [
@@ -94,7 +94,6 @@ class Fivestar extends FormElement {
       '#default_value' => self::getElementDefaultValue($element),
       '#weight' => -2,
       '#ajax' => $element['#ajax'],
-      '#disabled' => $element['#disabled'],
     ];
 
     if (isset($element['#parents'])) {
@@ -161,7 +160,11 @@ class Fivestar extends FormElement {
     $element['#prefix'] = '<div ' . new Attribute(['class' => $class]) . '>';
     $element['#suffix'] = '</div>';
 
-    if ($element['#disabled']) {
+    if ($element['#show_static_result']) {
+      // Dirty trick for omit error during rating save when voting is disabled.
+      $element['vote']['#type'] = 'hidden';
+      unset($element['vote']['#theme']);
+
       $static_stars = [
         '#theme' => 'fivestar_static',
         '#rating' => $element['vote']['#default_value'],
@@ -177,7 +180,7 @@ class Fivestar extends FormElement {
         '#description' => $element['vote']['#description'],
       ];
 
-      $element['vote'] = [
+      $element['vote_statistic'] = [
         '#type' => 'markup',
         '#markup' => \Drupal::service('renderer')->render($element_static),
       ];
