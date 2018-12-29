@@ -186,9 +186,6 @@ class Fivestar extends FormElement {
       ];
     }
 
-    // Add validation function that considers a 0 value as empty.
-//    $element['#element_validate'] = ['fivestar_validate'];
-
     $element['#attached']['library'][] = 'fivestar/fivestar.base';
 
     return $element;
