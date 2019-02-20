@@ -222,8 +222,7 @@ class FivestarItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function isEmpty() {
-    $rating = $this->get('rating')->getValue();
-    return empty($rating) || $rating == '-';
+    return FALSE;
   }
 
   /**

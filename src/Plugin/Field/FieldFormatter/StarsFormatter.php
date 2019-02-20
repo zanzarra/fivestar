@@ -5,6 +5,7 @@ namespace Drupal\fivestar\Plugin\Field\FieldFormatter;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 
+
 /**
  * Plugin implementation of the 'fivestar_stars' formatter.
  *
@@ -44,11 +45,17 @@ class StarsFormatter extends FiveStarFormatterBase {
       'css' => $widget_css_path,
     ] + $this->getSettings();
 
+    $definition = $this->fieldDefinition;
+
+    if(empty($items->list)){
+        $items->list = $definition;
+    }
+
     /** @var \Drupal\fivestar\Plugin\Field\FieldType\FivestarItem $item */
     foreach ($items as $delta => $item) {
       $context = [
         'entity' => $entity,
-        'field_definition' => $item->getFieldDefinition(),
+        'field_definition' => $definition,
         'display_settings' => $display_settings,
       ];
 
