@@ -44,15 +44,32 @@ class StarsFormatter extends FiveStarFormatterBase {
       'css' => $widget_css_path,
     ] + $this->getSettings();
 
-    /** @var \Drupal\fivestar\Plugin\Field\FieldType\FivestarItem $item */
-    foreach ($items as $delta => $item) {
+    if (!$items->isEmpty()) {
+      /** @var \Drupal\fivestar\Plugin\Field\FieldType\FivestarItem $item */
+      foreach ($items as $delta => $item) {
+        $context = [
+          'entity' => $entity,
+          'field_definition' => $item->getFieldDefinition(),
+          'display_settings' => $display_settings,
+        ];
+
+        $elements[$delta] = $form_builder->getForm(
+          '\Drupal\fivestar\Form\FivestarForm', $context
+        );
+      }
+    }
+    // Load empty form ('No votes yet') if there are no items.
+    else {
+      $bundle_fields = \Drupal::getContainer()->get('entity_field.manager')->getFieldDefinitions($entity->getEntityType()->id(), $entity->bundle());
+      $field_definition = $bundle_fields[$items->getName()];
+
       $context = [
         'entity' => $entity,
-        'field_definition' => $item->getFieldDefinition(),
+        'field_definition' => $field_definition,
         'display_settings' => $display_settings,
       ];
 
-      $elements[$delta] = $form_builder->getForm(
+      $elements[] = $form_builder->getForm(
         '\Drupal\fivestar\Form\FivestarForm', $context
       );
     }
@@ -105,4 +122,5 @@ class StarsFormatter extends FiveStarFormatterBase {
 
     return $elements;
   }
+
 }
